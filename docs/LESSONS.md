@@ -38,6 +38,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 0.1 — Flutter iskeleti
+✅ İyi giden: `flutter create --project-name catch_me --platforms android .` mevcut klasörde sorunsuz çalıştı; `flutter analyze` temiz, widget testi geçti.
+❌ Hata / sorun: Android cihaz/emülatörde açılış denenmedi (yalnızca analyze + widget testi).
+📌 Çıkarılan kural: Klasör adı geçersiz paket adıysa `--project-name` ile ver.
+
 ### [Proje başlangıcı]
 ✅ İyi giden: Plan ve kararlar yazıldı (Catch Me, Res 9, Android önce, 13+).
 📌 Çıkarılan kural: Adımlar küçük tutulur; her adım sonunda özet + commit + bu dosyaya giriş.
