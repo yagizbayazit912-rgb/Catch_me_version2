@@ -38,6 +38,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 0.2 — Pastel tema
+✅ İyi giden: Nunito (variable TTF, OFL) `assets/fonts/` altına paketlendi → çevrimdışı çalışır, ağ bağımlılığı yok. `AppColors`/`AppTheme` `core/theme` altında; `flutter analyze` temiz, widget testi geçti.
+❌ Hata / sorun: 0.1'in testi harita metnini arıyordu, ana ekran değişince kırıldı → test güncellendi. Cihazda görsel kontrol yapılmadı; variable font ağırlıklarının (w800/w900) Android'de doğru render olduğu doğrulanmadı.
+📌 Çıkarılan kural: Ana ekran (home) değişince `test/widget_test.dart` da güncellenmeli.
+
 ### [2026-10-01] Adım 0.1 — Flutter iskeleti
 ✅ İyi giden: `flutter create --project-name catch_me --platforms android .` mevcut klasörde sorunsuz çalıştı; `flutter analyze` temiz, widget testi geçti.
 ❌ Hata / sorun: Android cihaz/emülatörde açılış denenmedi (yalnızca analyze + widget testi).
