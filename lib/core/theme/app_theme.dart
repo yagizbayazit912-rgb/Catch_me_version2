@@ -21,6 +21,31 @@ abstract final class AppTheme {
   /// Kartlar/paneller için ortak yumuşak gölge.
   static List<BoxShadow> get softShadow => [_softShadow];
 
+  static ButtonStyle _toned(Color color) => ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: AppColors.text,
+        elevation: 3,
+        shadowColor: color.withValues(alpha: 0.6),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.button),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          fontSize: 16,
+        ),
+      );
+
+  /// Altın toplama: sarı.
+  static ButtonStyle get goldButton => _toned(AppColors.accentButter);
+
+  /// Sahiplen / onayla: yeşil.
+  static ButtonStyle get confirmButton => _toned(AppColors.primary);
+
+  /// Vazgeç / iptal: kırmızı.
+  static ButtonStyle get cancelButton => _toned(AppColors.danger);
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,

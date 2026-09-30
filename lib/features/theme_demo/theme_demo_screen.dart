@@ -47,10 +47,19 @@ class ThemeDemoScreen extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: [
-              ElevatedButton(onPressed: () {}, child: const Text('Altın Topla')),
-              FilledButton(onPressed: () {}, child: const Text('Sahiplen')),
+              ElevatedButton(
+                  style: AppTheme.goldButton,
+                  onPressed: () {},
+                  child: const Text('Altın Topla')),
+              ElevatedButton(
+                  style: AppTheme.confirmButton,
+                  onPressed: () {},
+                  child: const Text('Sahiplen')),
+              ElevatedButton(
+                  style: AppTheme.cancelButton,
+                  onPressed: () {},
+                  child: const Text('Vazgeç')),
               OutlinedButton(onPressed: () {}, child: const Text('Detay')),
-              TextButton(onPressed: () {}, child: const Text('Vazgeç')),
               const ElevatedButton(onPressed: null, child: Text('Pasif')),
             ],
           ),
@@ -73,7 +82,7 @@ class ThemeDemoScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _DemoCard(
-            color: AppColors.warning.withValues(alpha: 0.35),
+            color: AppColors.warning.withValues(alpha: 0.6),
             title: 'Kira vakti!',
             subtitle: 'Bir bölgenin kirası yaklaşıyor',
             icon: Icons.notifications_rounded,
@@ -180,11 +189,14 @@ class _DemoCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style: text.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
+                    style: text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900, fontSize: 18)),
+                const SizedBox(height: 2),
                 Text(subtitle,
-                    style: text.bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary)),
+                    style: text.bodyMedium?.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15)),
               ],
             ),
           ),
