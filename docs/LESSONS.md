@@ -39,6 +39,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 1.1 — location/ping servisi
+✅ İyi giden: Edge Function `location-ping` (tek dosya, h3-js ile sunucuda h3 hesabı; doğruluk >50 m, ışınlanma >30 m/s, mock bildirimi, bayat ping reddi; >25 km/s kabul ama varlık sayılmaz). `ping_state` tablosu RLS + revoke (politikasız, sadece service_role). İstemci `PingRepository` + haritada geçici "Ping gönder" çipi (sunucu h3 ↔ yerel h3). `flutter analyze` temiz.
+❌ Hata / sorun: Yerelde Supabase CLI/Deno yok → fonksiyon çalıştırılıp test edilemedi; sadece analyze ile doğrulandı. Cihazda/Supabase'de doğrulama kullanıcıda bekliyor.
+📌 Çıkarılan kural: Reddedilen ping son durumu güncellemez; hız hesabında iki ölçümün doğruluğu mesafeden düşülür (GPS gürültüsü sahte ışınlanma üretmesin).
+
 ### [2026-10-01] Adım 0.7 — Google ile giriş
 ✅ İyi giden: `google_sign_in` 7.x yerel akış (`authenticate()` → ID token → Supabase `signInWithIdToken`); tarayıcı yönlendirmesi yok. Giriş ekranına "Google ile devam et" eklendi, `GOOGLE_WEB_CLIENT_ID` `.env`'den okunuyor (secret repoda/istemcide yok). `flutter analyze` temiz. Kullanıcı cihazda doğruladı: Google girişi + e-posta girişi çalışıyor.
 ❌ Hata / sorun: Supabase "Client IDs" alanına istemci adı (`catch-me`) yazılmıştı → Web client ID (`...apps.googleusercontent.com`) olmalı. Test users listesinde olmayan hesap da girebildi (sebep kesinleşmedi: proje üyesi ya da temel kapsamda kısıt uygulanmıyor olabilir).

@@ -23,3 +23,9 @@
 - **Çıkış butonu:** Geçici olarak harita sağ üstte; profil ekranına taşınacak.
 
 - **Google girişi:** Google girişi 0.6'dan ayrı bir adım (0.7). Adım 1.1 ve sonrasını engellemez, kapalı beta öncesi tamamlanmalı. 0.7'de doğrulanacaklar: debug ve release için ayrı SHA-1 parmak izleri, Supabase geri dönüş (redirect) adresi, Google Cloud hesabını ve anahtarları kullanıcının oluşturması. iOS'a geçilirken Apple'ın üçüncü taraf girişle birlikte 'Apple ile giriş' isteyip istemediği güncel kurallardan kontrol edilecek.
+
+## Adım 1.1 — location/ping
+- **Sunucu katmanı:** Supabase Edge Function `location-ping` (Postgres'te h3 eklentisi yok). Tek dosya; sayılar dosya başındaki `CONFIG` bloğunda (ileride config tablosuna taşınacak). `H3_RESOLUTION` istemcideki `GameConfig.h3Resolution` ile elle senkron tutulmalı.
+- **Filtreler:** doğruluk >50 m ret; hesaplanan hız >30 m/s ret ("teleport"); istemci `isMocked` bildirirse ret; istemci zamanı 120 sn'den eskiyse ret. Hız sunucuda son geçerli ping'den hesaplanır (istemci hızına güvenilmez); mesafeden iki doğruluk değeri düşülür. Hız >25 km/s ise ping kabul edilir ama `counts_for_presence=false` (1.2 kullanacak).
+- **ping_state:** son geçerli ping tek satır/kullanıcı; istemci erişimi yok (RLS politikasız + revoke). Ham koordinat kimseye dönmez, cevap sadece çağıranın kendi h3'ünü içerir.
+- **Test çipi:** haritadaki "Ping gönder" geçici; Adım 1.6'da yürüyüş modu ping'i otomatik atınca kalkacak. Mock tespiti şimdilik istemci bildirimine bağlı, sunucu tarafı risk skoru Adım 1.5.

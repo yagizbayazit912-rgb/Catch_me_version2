@@ -7,6 +7,7 @@ import '../../core/config/game_config.dart';
 import '../../core/hex/hex_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/ping_repository.dart';
 
 /// Ana harita ekranı: pastel MapLibre stili + ön plan konum izni.
 class MapScreen extends StatefulWidget {
@@ -35,6 +36,8 @@ class _MapScreenState extends State<MapScreen>
 
   final _hex = HexService();
   final _myCell = HexService(ringSize: 0);
+  final _ping = PingRepository();
+  String? _pingText;
   late final AnimationController _rise = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: GameConfig.hexRiseMs),
@@ -197,7 +200,30 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
-  /// Adım 0.5 deneme paneli: animasyonu tekrar oynatır, ölçümü gösterir.
+  /// Adım 1.1 deneme: güncel konumu sunucuya yollar, sunucunun bulduğu
+  /// altıgeni yerel hesapla karşılaştırır. Yürüyüş modu (1.6) gelince kalkacak.
+  Future<void> _sendPing() async {
+    setState(() => _pingText = 'Gönderiliyor…');
+    String text;
+    try {
+      final pos = await Geolocator.getCurrentPosition();
+      final res = await _ping.send(pos);
+      if (res.ok) {
+        final local = _myCell.cellAt(pos.latitude, pos.longitude);
+        final match = res.h3 == local ? '✓ eşleşti' : '✗ FARKLI ($local)';
+        text = 'Ping ok • ${res.h3} $match'
+            ' • ${res.speedMps} m/s'
+            '${res.countsForPresence == false ? ' • varlık yok' : ''}';
+      } else {
+        text = 'Reddedildi: ${res.reason}';
+      }
+    } catch (e) {
+      text = 'Ping hatası: $e';
+    }
+    if (mounted) setState(() => _pingText = text);
+  }
+
+  /// Geçici deneme paneli: 3D animasyonu tekrar oynatır (0.5), ping atar (1.1).
   Widget _riseTestChip() {
     final rate = _riseUpdatesPerSec;
     return SafeArea(
@@ -205,15 +231,32 @@ class _MapScreenState extends State<MapScreen>
         alignment: Alignment.topCenter,
         child: Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: ActionChip(
-            backgroundColor: AppColors.surface,
-            avatar: const Icon(Icons.view_in_ar_rounded, color: AppColors.text),
-            label: Text(
-              rate == null
-                  ? '3D yükselt'
-                  : '3D tekrar • ${rate.toStringAsFixed(0)} güncelleme/sn',
-            ),
-            onPressed: _playRise,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ActionChip(
+                backgroundColor: AppColors.surface,
+                avatar: const Icon(
+                  Icons.view_in_ar_rounded,
+                  color: AppColors.text,
+                ),
+                label: Text(
+                  rate == null
+                      ? '3D yükselt'
+                      : '3D tekrar • ${rate.toStringAsFixed(0)} güncelleme/sn',
+                ),
+                onPressed: _playRise,
+              ),
+              ActionChip(
+                backgroundColor: AppColors.surface,
+                avatar: const Icon(
+                  Icons.cell_tower_rounded,
+                  color: AppColors.text,
+                ),
+                label: Text(_pingText ?? 'Ping gönder'),
+                onPressed: _sendPing,
+              ),
+            ],
           ),
         ),
       ),
