@@ -41,7 +41,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-01] Adım 1.4 — Sahipli altıgenlerin renkli/yükseltilmiş çizimi
 ✅ İyi giden: RPC `owned_hexes_in(text[])` (security definer, sadece authenticated; `hexes` kapalı kalır). İstemci görünür alanı (+%15 pay) h3'e çevirip sadece önbellekte olmayan/60 sn'den eski hücreleri sorar; dönen sadece h3 + is_mine + color_seed (owner_id/koordinat yok). Sahipliler tek fill-extrusion katmanında, renk veriden (`['get','color']`): kendi = `AppColors.ownHex`, diğerleri `otherPlayerPalette[seed % n]`. Yükselme animasyonu ayrı tek-hücreli katmanda → kare başı `setLayerProperties` maliyeti sahipli sayısından bağımsız. Claim'de `res.h3` önbelleğe eklenir. `flutter analyze` temiz, test geçti.
-❌ Hata / sorun: Cihazda henüz doğrulanmadı (migration uygulanmalı). Çok sahipli altıgenle performans cihazda ölçülmedi. >600 hücre (uzak zoom) → sahiplik çizilmiyor. "3D yükselt" çipi artık claim olmadan görünür blok göstermez ("Claim dene" bulunduğun hücreyi yükseltir).
+✅ Kullanıcı cihazda doğruladı: kendi bölge nane yeşili blok; SQL ile ikinci hesaba devredilince şeftali renkte göründü, geri alınınca TTL içinde yeşile döndü. ❌ Hata / sorun: Çok sahipli altıgenle performans cihazda ölçülmedi. >600 hücre (uzak zoom) → sahiplik çizilmiyor. "3D yükselt" çipi artık claim olmadan görünür blok göstermez ("Claim dene" bulunduğun hücreyi yükseltir).
 📌 Çıkarılan kural: Animasyonlu yükseklik ayrı küçük katmanda; toplu veriler sabit katmanda veri-güdümlü ifadeyle.
 
 ### [2026-10-01] Adım 1.3 — Sahiplenme animasyonu, haptik, ses
