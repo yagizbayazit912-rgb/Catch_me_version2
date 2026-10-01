@@ -9,7 +9,7 @@
 
 ## Adım 0.5 — 3D deneme (spike) sonucu
 - **Durum:** ✅ **Çalışıyor** — Samsung SM S721B'de eğimli kamera + yükseltilmiş altıgen + yükselme animasyonu görüldü, ~119 güncelleme/sn (kullanıcı doğruladı). Yedek plana gerek yok.
-- **Açık sorun:** Blok siyah çıktı (renk düz `"#hex"` metni olarak gidiyordu). `['rgb', r, g, b]` ifadesiyle düzeltildi → ⏳ cihazda doğrulanmadı. Animasyon çok hızlı bulundu → süre 900 → 1600 ms.
+- **Açık sorun:** Blok siyah çıktı (renk düz `"#hex"` metni olarak gidiyordu). `['rgb', r, g, b]` ifadesi denendi → ❌ hâlâ siyah (renk biçimi sebep değil). Şimdiki deneme: opaklık 0.9 → 1.0 (native < 1 opaklıkta ekran dışı çizim yapıyor, Flutter doku modunda siyah çıkma şüphesi) → ⏳ cihazda doğrulanmadı. Animasyon çok hızlı bulundu → süre 900 → 1600 ms.
 - **Paket desteği (kaynak kodda kontrol edildi):** `maplibre_gl` 0.27.1 → `addFillExtrusionLayer` + `FillExtrusionLayerProperties` (height, base, color, opacity, verticalGradient) var; Android'de `layer#setProperties` FillExtrusion katmanını da güncelliyor. Kamera eğimi `CameraPosition.tilt` ile.
 - **Yöntem:** Eğim `GameConfig.mapTilt` (50°). Kullanıcının hücresi ayrı kaynak + fill-extrusion katmanı. Animasyon: Dart `AnimationController` + `Curves.elasticOut`, her karede `setLayerProperties(fillExtrusionHeight)`; önceki çağrı bitmeden yenisi atılmaz. Yükseklik/süre `GameConfig`'ten (40 m, 900 ms). Hareketi azalt → anında son yükseklik.
 - **Ölçüm:** Üstteki "3D tekrar • N güncelleme/sn" çipi, animasyon sırasında native katmana kaç güncelleme gittiğini gösterir (≈ akıcılık göstergesi; harita FPS'i değil).

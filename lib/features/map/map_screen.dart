@@ -175,7 +175,9 @@ class _MapScreenState extends State<MapScreen>
           (AppColors.primary.g * 255).round(),
           (AppColors.primary.b * 255).round(),
         ],
-        fillExtrusionOpacity: 0.9,
+        // < 1 opaklık native'de ekran dışı çizime düşüyor; Flutter doku
+        // modunda siyah çıkma şüphesi → tam opak.
+        fillExtrusionOpacity: 1.0,
         fillExtrusionHeight: 0.0,
         fillExtrusionBase: 0.0,
         fillExtrusionVerticalGradient: true,
