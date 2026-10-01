@@ -39,8 +39,8 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ```
 
 ### [2026-10-01] Adım 0.4 — H3 + düz altıgenler
-✅ İyi giden: `h3_flutter_plus` (FFI) eklendi; `HexService` konum etrafında gridDisk halkasını GeoJSON olarak üretiyor, MapLibre fill+line katmanıyla çiziliyor. Çözünürlük/halka `GameConfig`'ten (Res 9, 2 halka). `flutter analyze` temiz, debug APK derlendi.
-❌ Hata / sorun: Cihaz/emülatör bağlı değildi (offline) → altıgenlerin haritada görünmesi **cihazda doğrulanmadı**, kullanıcıdan doğrulama bekleniyor. h3 ve maplibre'nin `LatLng` sınıfları çakışır → h3 `as h3lib` ile içe aktarıldı.
+✅ İyi giden: `h3_flutter_plus` (FFI) eklendi; `HexService` konum etrafında gridDisk halkasını GeoJSON olarak üretiyor, MapLibre fill+line katmanıyla çiziliyor. Çözünürlük/halka `GameConfig`'ten (Res 9, 2 halka). `flutter analyze` temiz; **Samsung SM S721B (Android 16) cihazında altıgenler göründü, kullanıcı doğruladı.**
+❌ Hata / sorun: Emülatör offline kaldı, gerçek cihaz sonradan bağlandı. h3 ve maplibre'nin `LatLng` sınıfları çakışır → h3 `as h3lib` ile içe aktarıldı.
 📌 Çıkarılan kural: —
 
 ### [2026-10-01] Adım 0.3 — Harita + konum izni
