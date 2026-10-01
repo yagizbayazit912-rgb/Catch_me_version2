@@ -38,6 +38,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 0.5 — 3D deneme (spike)
+✅ İyi giden: `maplibre_gl` 0.27.1 kaynağında fill-extrusion + Android `setLayerProperties` desteği doğrulandı; eğimli kamera + tek altıgen yükselme animasyonu (elasticOut, kare başına setLayerProperties) yazıldı, `flutter analyze` temiz.
+❌ Hata / sorun: Henüz cihazda denenmedi → sonuç DECISIONS.md'de "doğrulanmadı" olarak duruyor.
+📌 Çıkarılan kural: Platform kanalına kare başına çağrı atarken önceki çağrı bitmeden yenisini atma (busy bayrağı).
+
 ### [2026-10-01] Adım 0.4 — H3 + düz altıgenler
 ✅ İyi giden: `h3_flutter_plus` (FFI) eklendi; `HexService` konum etrafında gridDisk halkasını GeoJSON olarak üretiyor, MapLibre fill+line katmanıyla çiziliyor. Çözünürlük/halka `GameConfig`'ten (Res 9, 2 halka). `flutter analyze` temiz; **Samsung SM S721B (Android 16) cihazında altıgenler göründü, kullanıcı doğruladı.**
 ❌ Hata / sorun: Emülatör offline kaldı, gerçek cihaz sonradan bağlandı. h3 ve maplibre'nin `LatLng` sınıfları çakışır → h3 `as h3lib` ile içe aktarıldı.

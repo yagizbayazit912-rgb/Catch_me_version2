@@ -6,4 +6,13 @@ abstract final class GameConfig {
 
   /// Kullanıcının hücresi etrafında çizilecek halka sayısı (2 → 19 altıgen).
   static const hexRingSize = 2;
+
+  /// Adım 0.5 (3D deneme): kamera eğimi (derece, plan 45–55°).
+  static const mapTilt = 50.0;
+
+  /// Yükseltilmiş altıgenin yüksekliği (metre).
+  static const hexExtrusionHeight = 40.0;
+
+  /// Yükselme animasyonu süresi (ms).
+  static const hexRiseMs = 900;
 }

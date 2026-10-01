@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import '../../core/config/game_config.dart';
 import '../../core/hex/hex_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -17,15 +18,27 @@ class MapScreen extends StatefulWidget {
 
 enum _LocState { loading, ready, denied, deniedForever, serviceOff }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen>
+    with SingleTickerProviderStateMixin {
   static const _styleAsset = 'assets/map/pastel_style.json';
   static const _defaultZoom = 16.0;
 
   static const _hexSource = 'hex-src';
   static const _hexFill = 'hex-fill';
   static const _hexLine = 'hex-line';
+  // Adım 0.5 deneme: kullanıcının hücresi 3D blok olarak yükselir.
+  static const _hex3dSource = 'hex3d-src';
+  static const _hex3dLayer = 'hex3d-layer';
 
   final _hex = HexService();
+  final _myCell = HexService(ringSize: 0);
+  late final AnimationController _rise = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: GameConfig.hexRiseMs),
+  )..addListener(_onRiseTick);
+  bool _riseBusy = false;
+  int _riseUpdates = 0;
+  double? _riseUpdatesPerSec;
   MapLibreMapController? _map;
   bool _hexDrawn = false;
   String? _style;
@@ -39,6 +52,51 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) setState(() => _style = s);
     });
     _resolveLocation();
+  }
+
+  @override
+  void dispose() {
+    _rise.dispose();
+    super.dispose();
+  }
+
+  /// Her karede yüksekliği native katmana yollar; önceki çağrı bitmeden
+  /// yenisini atmaz (kanal tıkanmasın). Kaç güncelleme gittiği ölçülür.
+  Future<void> _onRiseTick() async {
+    final map = _map;
+    if (map == null || _riseBusy) return;
+    _riseBusy = true;
+    final t = Curves.elasticOut.transform(_rise.value);
+    try {
+      await map.setLayerProperties(
+        _hex3dLayer,
+        FillExtrusionLayerProperties(
+          fillExtrusionHeight: GameConfig.hexExtrusionHeight * t,
+        ),
+      );
+      _riseUpdates++;
+    } catch (_) {
+      // Stil yeniden yüklenirken katman yoksa sessizce geç.
+    } finally {
+      _riseBusy = false;
+    }
+  }
+
+  /// Yükselme animasyonunu oynatır. "Hareketi azalt" açıksa anında son hal.
+  Future<void> _playRise() async {
+    if (!_hexDrawn) return;
+    if (MediaQuery.of(context).disableAnimations) {
+      _rise.value = 1;
+      return;
+    }
+    _riseUpdates = 0;
+    final sw = Stopwatch()..start();
+    await _rise.forward(from: 0).orCancel.catchError((_) {});
+    sw.stop();
+    if (mounted) {
+      setState(() => _riseUpdatesPerSec =
+          _riseUpdates * 1000 / sw.elapsedMilliseconds.clamp(1, 1 << 30));
+    }
   }
 
   /// Sadece ön plan izni ister (arka plan konumu bu adımda yok).
@@ -79,8 +137,10 @@ class _MapScreenState extends State<MapScreen> {
     final map = _map;
     if (p == null || map == null) return;
     final data = _hex.hexagonsAround(p.latitude, p.longitude);
+    final mine = _myCell.hexagonsAround(p.latitude, p.longitude);
     if (_hexDrawn) {
       await map.setGeoJsonSource(_hexSource, data);
+      await map.setGeoJsonSource(_hex3dSource, mine);
       return;
     }
     _hexDrawn = true;
@@ -102,6 +162,19 @@ class _MapScreenState extends State<MapScreen> {
         lineOpacity: 0.8,
       ),
     );
+    await map.addGeoJsonSource(_hex3dSource, mine);
+    await map.addFillExtrusionLayer(
+      _hex3dSource,
+      _hex3dLayer,
+      FillExtrusionLayerProperties(
+        fillExtrusionColor: _hexColor(AppColors.primary),
+        fillExtrusionOpacity: 0.9,
+        fillExtrusionHeight: 0.0,
+        fillExtrusionBase: 0.0,
+        fillExtrusionVerticalGradient: true,
+      ),
+    );
+    _playRise();
   }
 
   void _flyToUser() {
@@ -109,7 +182,32 @@ class _MapScreenState extends State<MapScreen> {
     if (p == null || _map == null) return;
     _drawHexes();
     _map!.animateCamera(
-      CameraUpdate.newLatLngZoom(LatLng(p.latitude, p.longitude), _defaultZoom),
+      CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(p.latitude, p.longitude),
+        zoom: _defaultZoom,
+        tilt: GameConfig.mapTilt,
+      )),
+    );
+  }
+
+  /// Adım 0.5 deneme paneli: animasyonu tekrar oynatır, ölçümü gösterir.
+  Widget _riseTestChip() {
+    final rate = _riseUpdatesPerSec;
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: ActionChip(
+            backgroundColor: AppColors.surface,
+            avatar: const Icon(Icons.view_in_ar_rounded, color: AppColors.text),
+            label: Text(rate == null
+                ? '3D yükselt'
+                : '3D tekrar • ${rate.toStringAsFixed(0)} güncelleme/sn'),
+            onPressed: _playRise,
+          ),
+        ),
+      ),
     );
   }
 
@@ -127,6 +225,7 @@ class _MapScreenState extends State<MapScreen> {
                     ? const LatLng(41.0082, 28.9784)
                     : LatLng(_position!.latitude, _position!.longitude),
                 zoom: _position == null ? 11 : _defaultZoom,
+                tilt: GameConfig.mapTilt,
               ),
               myLocationEnabled: ready,
               myLocationRenderMode: MyLocationRenderMode.normal,
@@ -142,6 +241,7 @@ class _MapScreenState extends State<MapScreen> {
             )
           else
             const Center(child: CircularProgressIndicator()),
+          if (ready) _riseTestChip(),
           if (_state != _LocState.ready && _state != _LocState.loading)
             _PermissionCard(state: _state, onRetry: _resolveLocation),
         ],

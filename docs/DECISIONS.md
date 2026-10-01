@@ -6,3 +6,10 @@
 - **Adım 0.3:** Harita stili API anahtarı gerektirmeyen OpenFreeMap vektör kaynağı + yerel `assets/map/pastel_style.json` (etiketsiz, bu yüzden glyph gerekmez). Stil JSON'undaki renkler palet hex'leriyle elle eşlendi (JSON `core/theme`'den okuyamaz). Yayın öncesi OpenFreeMap kullanım koşulları/ataf ve kendi tile barındırma değerlendirilecek.
 - **Adım 0.3:** Başlangıç kamerası konum alınamazsa İstanbul (41.0082, 28.9784).
 
+
+## Adım 0.5 — 3D deneme (spike) sonucu
+- **Durum:** ⏳ **Cihazda doğrulanmadı** (kod hazır, `flutter analyze` temiz). Sonuç kullanıcı cihazda çalıştırınca "çalışıyor / çalışmıyor" olarak güncellenecek.
+- **Paket desteği (kaynak kodda kontrol edildi):** `maplibre_gl` 0.27.1 → `addFillExtrusionLayer` + `FillExtrusionLayerProperties` (height, base, color, opacity, verticalGradient) var; Android'de `layer#setProperties` FillExtrusion katmanını da güncelliyor. Kamera eğimi `CameraPosition.tilt` ile.
+- **Yöntem:** Eğim `GameConfig.mapTilt` (50°). Kullanıcının hücresi ayrı kaynak + fill-extrusion katmanı. Animasyon: Dart `AnimationController` + `Curves.elasticOut`, her karede `setLayerProperties(fillExtrusionHeight)`; önceki çağrı bitmeden yenisi atılmaz. Yükseklik/süre `GameConfig`'ten (40 m, 900 ms). Hareketi azalt → anında son yükseklik.
+- **Ölçüm:** Üstteki "3D tekrar • N güncelleme/sn" çipi, animasyon sırasında native katmana kaç güncelleme gittiğini gösterir (≈ akıcılık göstergesi; harita FPS'i değil).
+- **Yedek plan (çalışmazsa / takılırsa):** (1) Akıcı değilse: yükseltme kalır, animasyon Flutter tarafında overlay (ölçeklenen altıgen sprite + gölge) ile oynanır, bitince katman tek seferde son yüksekliğe ayarlanır. (2) Fill-extrusion hiç görünmezse: altıgenler düz çizilir, yükseklik hissi sprite + blob gölge ile verilir (PROJE_PLANI 14.1-A yedek yolu).
