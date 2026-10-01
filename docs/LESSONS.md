@@ -41,7 +41,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-01] Adım 1.2 — Presence birikimi ve sahiplenme
 ✅ İyi giden: Migration `20261001020000_presence_claim.sql`: `game_config` (claim_seconds=600, pencere 24 sa, ping başına tavan 60 sn, sahiplik limiti 5), `hexes`, `hex_progress`, hepsi RLS + revoke (sadece service_role). Birikim ve claim tek atomik SQL fonksiyonunda (`accrue_presence`, sadece service_role çağırır); `location-ping` her kabul edilen ping'te çağırıyor. Süre = aynı altıgendeki ardışık ping farkı (altıgen değişimi/ilk ping 0 sn, araç hızında sayılmaz).
-❌ Hata / sorun: Yerelde CLI/Deno yok → çalıştırılıp test edilemedi, cihaz doğrulaması bekliyor. Sahipli (başkasının) bölgede meydan okuma henüz yok, sadece birikim sürüyor.
+❌ Hata / sorun: Yerelde CLI/Deno yok → yerelde test edilemedi. ✅ Kullanıcı cihazda doğruladı (claim_seconds=30 ile test, bölge `hexes`'e kullanıcıya yazıldı, sonra 600'e geri alındı). Not: uygulama `--dart-define-from-file=.env` olmadan açılınca "Supabase ayarı bulunamadı" gösterir; panelde "Failed to fetch" geçici bağlantı sorunuydu. Sahipli (başkasının) bölgede meydan okuma henüz yok, sadece birikim sürüyor.
 📌 Çıkarılan kural: Oyun sayıları `game_config` tablosunda; sunucu fonksiyonu okur, koda gömülmez.
 
 ### [2026-10-01] Adım 1.1 — location/ping servisi
