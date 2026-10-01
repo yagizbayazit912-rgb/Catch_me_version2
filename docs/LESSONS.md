@@ -38,6 +38,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 0.4 — H3 + düz altıgenler
+✅ İyi giden: `h3_flutter_plus` (FFI) eklendi; `HexService` konum etrafında gridDisk halkasını GeoJSON olarak üretiyor, MapLibre fill+line katmanıyla çiziliyor. Çözünürlük/halka `GameConfig`'ten (Res 9, 2 halka). `flutter analyze` temiz, debug APK derlendi.
+❌ Hata / sorun: Cihaz/emülatör bağlı değildi (offline) → altıgenlerin haritada görünmesi **cihazda doğrulanmadı**, kullanıcıdan doğrulama bekleniyor. h3 ve maplibre'nin `LatLng` sınıfları çakışır → h3 `as h3lib` ile içe aktarıldı.
+📌 Çıkarılan kural: —
+
 ### [2026-10-01] Adım 0.3 — Harita + konum izni
 ✅ İyi giden: MapLibre + yerel pastel stil JSON (OpenFreeMap kaynağı, anahtar yok); izin akışı (verildi / reddedildi / kalıcı red / servis kapalı) tek kartta. `flutter analyze` temiz, `flutter build apk --debug` başarılı.
 ❌ Hata / sorun: Emülatör "offline" çıktı → haritanın gerçekten açıldığı ve mavi konum noktasının göründüğü **cihazda doğrulanmadı**; yalnızca derleme doğrulandı. Platform view yüzünden MapScreen widget testi yazılmadı (test tema ekranına bağlandı). Gradle Kotlin artımlı önbellek uyarıları (proje D:, pub cache C:) zararsız görünüyor.

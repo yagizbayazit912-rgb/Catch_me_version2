@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import '../../core/hex/hex_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -20,7 +21,13 @@ class _MapScreenState extends State<MapScreen> {
   static const _styleAsset = 'assets/map/pastel_style.json';
   static const _defaultZoom = 16.0;
 
+  static const _hexSource = 'hex-src';
+  static const _hexFill = 'hex-fill';
+  static const _hexLine = 'hex-line';
+
+  final _hex = HexService();
   MapLibreMapController? _map;
+  bool _hexDrawn = false;
   String? _style;
   Position? _position;
   _LocState _state = _LocState.loading;
@@ -63,9 +70,44 @@ class _MapScreenState extends State<MapScreen> {
     if (mounted) setState(() => _state = s);
   }
 
+  String _hexColor(Color c) =>
+      '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+
+  /// Konum etrafındaki altıgenleri düz (fill + çizgi) çizer.
+  Future<void> _drawHexes() async {
+    final p = _position;
+    final map = _map;
+    if (p == null || map == null) return;
+    final data = _hex.hexagonsAround(p.latitude, p.longitude);
+    if (_hexDrawn) {
+      await map.setGeoJsonSource(_hexSource, data);
+      return;
+    }
+    _hexDrawn = true;
+    await map.addGeoJsonSource(_hexSource, data);
+    await map.addFillLayer(
+      _hexSource,
+      _hexFill,
+      FillLayerProperties(
+        fillColor: _hexColor(AppColors.secondary),
+        fillOpacity: 0.18,
+      ),
+    );
+    await map.addLineLayer(
+      _hexSource,
+      _hexLine,
+      LineLayerProperties(
+        lineColor: _hexColor(AppColors.secondary),
+        lineWidth: 1.5,
+        lineOpacity: 0.8,
+      ),
+    );
+  }
+
   void _flyToUser() {
     final p = _position;
     if (p == null || _map == null) return;
+    _drawHexes();
     _map!.animateCamera(
       CameraUpdate.newLatLngZoom(LatLng(p.latitude, p.longitude), _defaultZoom),
     );
@@ -92,6 +134,10 @@ class _MapScreenState extends State<MapScreen> {
               onMapCreated: (c) {
                 _map = c;
                 _flyToUser();
+              },
+              onStyleLoadedCallback: () {
+                _hexDrawn = false;
+                _drawHexes();
               },
             )
           else
