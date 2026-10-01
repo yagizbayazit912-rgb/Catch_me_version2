@@ -15,7 +15,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### Ön bilgi (projede henüz doğrulanmadı — doğruladıkça ✔ koy, yanlışsa düzelt)
 - [ ] Android 10+ arka plan konumu: önce ön plan izni, sonra ayrı bir "her zaman izin" adımı ister. Kalıcı takip için foreground service + bildirim gerekir.
-- [ ] Supabase tablolarında RLS kapalıysa veriler herkese açık kalır. Her yeni tabloda RLS ve politika aynı adımda yazılır.
+- [x] ✔ Supabase tablolarında RLS kapalıysa veriler herkese açık kalır. Her yeni tabloda RLS ve politika aynı adımda yazılır; ayrıca Supabase varsayılan grant'leri `revoke all` ile geri alınır (Adım 0.6).
 - [ ] H3 indeksi `string` olarak saklanır; çözünürlük sabit kodlanmaz (config: şimdilik Res 9).
 - [ ] Haritada tüm altıgenleri çizme; sadece görünür alanı çiz/önbelleğe al.
 - [ ] Emülatörde konum simülasyonu gerçek GPS gürültüsünü göstermez; hız/doğruluk filtreleri gerçek cihazda ayrıca test edilmeli.
@@ -23,6 +23,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 - [ ] Animasyonlar (partikül, konfeti) düşük donanımlı Android'de kare düşürebilir; yedek mod (basit animasyon) şart.
 
 ### Doğrulanmış kurallar
+- `SUPABASE_URL` sadece proje kökü olmalı (`https://xxx.supabase.co`); `/rest/v1/` eki auth'ta "invalid path" hatası verir. `.env` değişince uygulama tamamen yeniden başlatılmalı (dart-define derlemede gömülür). (Adım 0.6)
 - `maplibre_gl` `setLayerProperties` null alanları atlamıyor; animasyonda tek özellik göndermek diğerlerini varsayılana (siyah) sıfırlar, her karede tüm özellikler gönderilmeli. (Adım 0.5)
 
 ---
@@ -40,7 +41,8 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-01] Adım 0.6 — Supabase + auth + users + RLS
 ✅ İyi giden: `supabase_flutter` 2.18 eklendi; URL/anahtar `--dart-define-from-file=.env` ile (asset'e gömülmez, `.env` gitignore'da, `git check-ignore` ile doğrulandı). `users` tablosu + kayıt tetikleyicisi + RLS migration'ı ve SQL Editor'de çalışan, kendini geri alan RLS testi (`supabase/tests/rls_users.sql`) yazıldı. `flutter analyze` temiz, mevcut test geçti.
-❌ Hata / sorun: Supabase yeni tablolarda anon/authenticated'a varsayılan TÜM yetkileri verir → sadece RLS'e güvenmek yerine `revoke all` + kolon bazlı `grant update(username)`. `anonKey` deprecated → `publishableKey`. Bash heredoc'u Türkçe kesme işaretli Dart kodunda bozuldu → Write aracı kullanıldı. **Henüz doğrulanmadı:** migration/RLS testi Supabase'de ve cihazda giriş, kullanıcı çalıştırınca işaretlenecek.
+❌ Hata / sorun: Supabase yeni tablolarda anon/authenticated'a varsayılan TÜM yetkileri verir → sadece RLS'e güvenmek yerine `revoke all` + kolon bazlı `grant update(username)`. `anonKey` deprecated → `publishableKey`. Bash heredoc'u Türkçe kesme işaretli Dart kodunda bozuldu → Write aracı kullanıldı. Kayıtta "invalid path specified in request url" → `.env`'de URL Data API sayfasından `/rest/v1/` ekiyle kopyalanmıştı (+ şablon satırı silinmemişti) → kök URL'ye düzeltilince çözüldü.
+✅ Doğrulandı (kullanıcı): migration + RLS testi Supabase'de çalıştı; cihazda kayıt → harita, çıkış → giriş çalışıyor.
 📌 Çıkarılan kural: Her yeni tabloda `revoke all ... from anon, authenticated` + gereken grant'lar + RLS politikası aynı migration'da.
 
 ### [2026-10-01] Adım 0.5 — 3D deneme (spike)
