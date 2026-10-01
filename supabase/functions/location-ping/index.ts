@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
   const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: prev, error: prevErr } = await admin
     .from("ping_state")
-    .select("lat,lng,accuracy_m,pinged_at")
+    .select("lat,lng,accuracy_m,h3_index,pinged_at")
     .eq("user_id", userId)
     .maybeSingle();
   if (prevErr) return json({ error: "server_error" }, 500);
@@ -118,11 +118,29 @@ Deno.serve(async (req) => {
   });
   if (upErr) return json({ error: "server_error" }, 500);
 
+  // Adım 1.2: varlık birikimi. Hızlıysa (araç) ping kabul edilir ama süre
+  // sayılmaz. Süre sadece AYNI altıgende kalınan ardışık ping aralığıdır
+  // (ilk ping veya altıgen değişimi 0 sn). Tavan ve eşikler DB config'inde.
+  const countsForPresence = speedMps * 3.6 <= CONFIG.PRESENCE_MAX_SPEED_KMH;
+  let presence: unknown = null;
+  if (countsForPresence) {
+    const seconds = prev && prev.h3_index === h3Index
+      ? Math.floor((now.getTime() - new Date(prev.pinged_at).getTime()) / 1000)
+      : 0;
+    const { data, error: rpcErr } = await admin.rpc("accrue_presence", {
+      p_user: userId,
+      p_h3: h3Index,
+      p_seconds: seconds,
+    });
+    if (rpcErr) return json({ error: "server_error" }, 500);
+    presence = data;
+  }
+
   return json({
     ok: true,
     h3: h3Index,
     speed_mps: Math.round(speedMps * 10) / 10,
-    // Hızlıysa (araç) ping kabul edilir ama varlık puanı birikmez; 1.2 kullanır.
-    counts_for_presence: speedMps * 3.6 <= CONFIG.PRESENCE_MAX_SPEED_KMH,
+    counts_for_presence: countsForPresence,
+    presence,
   });
 });
