@@ -27,4 +27,9 @@ abstract final class GameConfig {
   /// Ayarlar ekranı gelene kadar sabit: ses / titreşim açık mı.
   static const hapticsEnabled = true;
   static const soundEnabled = true;
+
+  /// Claim sesi (assets/ altında yol, `audio/` ile başlar) ve titreşim.
+  static const claimSoundAsset = 'audio/claim.wav';
+  static const claimVibrateMs = 80;
+  static const claimVibrateAmplitude = 160; // 1–255
 }

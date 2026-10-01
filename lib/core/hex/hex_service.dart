@@ -5,8 +5,8 @@ import '../config/game_config.dart';
 /// H3 işlemleri. Çözünürlük [GameConfig]'ten okunur.
 class HexService {
   HexService({int? resolution, int? ringSize})
-      : resolution = resolution ?? GameConfig.h3Resolution,
-        ringSize = ringSize ?? GameConfig.hexRingSize;
+    : resolution = resolution ?? GameConfig.h3Resolution,
+      ringSize = ringSize ?? GameConfig.hexRingSize;
 
   final int resolution;
   final int ringSize;
@@ -19,8 +19,10 @@ class HexService {
 
   /// Konum etrafındaki altıgenleri GeoJSON FeatureCollection olarak döner.
   Map<String, dynamic> hexagonsAround(double lat, double lng) {
-    final center =
-        _h3.latLngToCell(h3lib.LatLng(lat: lat, lng: lng), resolution);
+    final center = _h3.latLngToCell(
+      h3lib.LatLng(lat: lat, lng: lng),
+      resolution,
+    );
     final features = <Map<String, dynamic>>[];
     for (final cell in _h3.gridDisk(center, ringSize)) {
       final ring = [

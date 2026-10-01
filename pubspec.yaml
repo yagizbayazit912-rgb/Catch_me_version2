@@ -39,6 +39,8 @@ dependencies:
   h3_flutter_plus: ^1.0.0+v4.2.1
   supabase_flutter: ^2.18.0
   google_sign_in: ^7.2.0
+  audioplayers: ^6.7.1
+  vibration: ^3.1.8
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +66,7 @@ flutter:
 
   assets:
     - assets/map/pastel_style.json
+    - assets/audio/
 
   fonts:
     - family: Nunito

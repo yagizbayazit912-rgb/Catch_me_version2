@@ -1,16 +1,45 @@
 import 'dart:math' as math;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 
 import '../../core/config/game_config.dart';
 import '../../core/theme/app_colors.dart';
 
-/// Claim anı: orta şiddetli haptik + kısa sistem sesi (PROJE_PLANI 14.1-B/2).
-/// Ses/titreşim ayarları kapalıysa hiçbir şey yapmaz.
-void playClaimFeedback() {
-  if (GameConfig.hapticsEnabled) HapticFeedback.mediumImpact();
-  if (GameConfig.soundEnabled) SystemSound.play(SystemSoundType.click);
+int _claimSoundCount = 0;
+
+/// Claim anı: titreşim motoru + medya sesi (PROJE_PLANI 14.1-B/2).
+/// Titreşim sistemin "dokunma geri bildirimi" ayarına bağlı değildir; cihazda
+/// motor yoksa [HapticFeedback]'e düşer. Ses dosyası yoksa sessizce geçer.
+/// Ardışık claim'lerde ses tonu hafifçe değişir (monotonluk olmasın).
+Future<void> playClaimFeedback() async {
+  if (GameConfig.hapticsEnabled) {
+    try {
+      if (await Vibration.hasVibrator()) {
+        await Vibration.vibrate(
+          duration: GameConfig.claimVibrateMs,
+          amplitude: GameConfig.claimVibrateAmplitude,
+        );
+      } else {
+        await HapticFeedback.mediumImpact();
+      }
+    } catch (_) {
+      HapticFeedback.mediumImpact();
+    }
+  }
+  if (GameConfig.soundEnabled) {
+    try {
+      // Her claim için ayrı oynatıcı: tek oynatıcıyı tekrar çalmak takılıyordu.
+      final player = AudioPlayer();
+      player.onPlayerComplete.first.then((_) => player.dispose());
+      await player.setPlaybackRate(1.0 + 0.06 * (_claimSoundCount++ % 4));
+      await player.play(AssetSource(GameConfig.claimSoundAsset));
+    } catch (_) {
+      // Ses dosyası yok / çalınamadı: sessiz devam.
+    }
+  }
 }
 
 /// Claim kutlaması: ripple halkaları, parıltılar ve yukarı süzülen "+1 Bölge".

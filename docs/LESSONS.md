@@ -41,8 +41,8 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-01] Adım 1.3 — Sahiplenme animasyonu, haptik, ses
 ✅ İyi giden: `ClaimCelebration` (ripple halkaları, parıltılar, "+1 Bölge" süzülür) + `playClaimFeedback` (orta haptik + sistem sesi) ayrı dosyada. Tetik sunucudan: `PingResult.claimed` (`presence.status == 'claimed'`). Süre/parçacık sayısı/ses-titreşim bayrağı `GameConfig`'te. Sadece etiket dokunma yakalar (dokununca atlanır), harita çalışmaya devam eder; "hareketi azalt" → animasyonsuz kısa bildirim. Yeni paket yok. `flutter analyze` temiz, test geçti.
-❌ Hata / sorun: Cihazda henüz doğrulanmadı (geçici "Claim animasyonu dene" çipiyle oynatılır). Ses şimdilik `SystemSound.click`; gerçek "ding" için ses paketi + asset sonraya. Komşu altıgen ripple'ı overlay halkasıyla yaklaşıldı (gerçek komşu dalgalanması 1.4'te sahipli çizimle).
-📌 Çıkarılan kural: —
+❌ Hata / sorun: `SystemSound.click` + `HapticFeedback` telefonun sistem ayarına bağlı (Samsung'ta kapalı) → `audioplayers` + `vibration`'a geçildi. Tek `AudioPlayer`'ı tekrar çalmak (lowLatency) ilk seferden sonra susturdu → her claim'de yeni oynatıcı. Sürekli kayan perde + gürültü "matkap" gibi duyuldu → ayrık basamaklı notalara çevrildi. ✅ Kullanıcı cihazda doğruladı (animasyon, titreşim, ses). Komşu altıgen ripple'ı overlay halkasıyla yaklaşıldı (gerçek komşu dalgalanması 1.4'te sahipli çizimle).
+📌 Çıkarılan kural: Ses/titreşim sistem ayarlarına (touch sounds/haptic) bağlı API'lerle yapılmaz; medya sesi + titreşim motoru kullanılır. Tekrar çalınan sesler için her seferinde yeni oynatıcı.
 
 ### [2026-10-01] Adım 1.2 — Presence birikimi ve sahiplenme
 ✅ İyi giden: Migration `20261001020000_presence_claim.sql`: `game_config` (claim_seconds=600, pencere 24 sa, ping başına tavan 60 sn, sahiplik limiti 5), `hexes`, `hex_progress`, hepsi RLS + revoke (sadece service_role). Birikim ve claim tek atomik SQL fonksiyonunda (`accrue_presence`, sadece service_role çağırır); `location-ping` her kabul edilen ping'te çağırıyor. Süre = aynı altıgendeki ardışık ping farkı (altıgen değişimi/ilk ping 0 sn, araç hızında sayılmaz).

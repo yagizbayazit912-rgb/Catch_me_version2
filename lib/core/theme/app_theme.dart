@@ -22,20 +22,20 @@ abstract final class AppTheme {
   static List<BoxShadow> get softShadow => [_softShadow];
 
   static ButtonStyle _toned(Color color) => ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: AppColors.text,
-        elevation: 3,
-        shadowColor: color.withValues(alpha: 0.6),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.button),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: fontFamily,
-          fontWeight: FontWeight.w800,
-          fontSize: 16,
-        ),
-      );
+    backgroundColor: color,
+    foregroundColor: AppColors.text,
+    elevation: 3,
+    shadowColor: color.withValues(alpha: 0.6),
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.button),
+    ),
+    textStyle: const TextStyle(
+      fontFamily: fontFamily,
+      fontWeight: FontWeight.w800,
+      fontSize: 16,
+    ),
+  );
 
   /// Altın toplama: sarı.
   static ButtonStyle get goldButton => _toned(AppColors.accentButter);
@@ -47,20 +47,21 @@ abstract final class AppTheme {
   static ButtonStyle get cancelButton => _toned(AppColors.danger);
 
   static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.primary,
-      onPrimary: AppColors.text,
-      secondary: AppColors.secondary,
-      onSecondary: AppColors.text,
-      tertiary: AppColors.accentLavender,
-      error: AppColors.warning,
-      onError: AppColors.text,
-      surface: AppColors.surface,
-      onSurface: AppColors.text,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: AppColors.text,
+          secondary: AppColors.secondary,
+          onSecondary: AppColors.text,
+          tertiary: AppColors.accentLavender,
+          error: AppColors.warning,
+          onError: AppColors.text,
+          surface: AppColors.surface,
+          onSurface: AppColors.text,
+        );
 
     final base = ThemeData(
       useMaterial3: true,
@@ -147,9 +148,7 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.input),
         ),
-        labelStyle: textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
+        labelStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

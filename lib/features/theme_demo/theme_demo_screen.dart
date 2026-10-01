@@ -27,11 +27,15 @@ class ThemeDemoScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Merhaba, kaşif!',
-              style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text(
+            'Merhaba, kaşif!',
+            style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 4),
-          Text('Nunito ile tatlı ve ferah bir başlangıç.',
-              style: text.bodyLarge?.copyWith(color: AppColors.textSecondary)),
+          Text(
+            'Nunito ile tatlı ve ferah bir başlangıç.',
+            style: text.bodyLarge?.copyWith(color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 24),
           const _SectionTitle('Renkler'),
           Wrap(
@@ -48,17 +52,20 @@ class ThemeDemoScreen extends StatelessWidget {
             runSpacing: 12,
             children: [
               ElevatedButton(
-                  style: AppTheme.goldButton,
-                  onPressed: () {},
-                  child: const Text('Altın Topla')),
+                style: AppTheme.goldButton,
+                onPressed: () {},
+                child: const Text('Altın Topla'),
+              ),
               ElevatedButton(
-                  style: AppTheme.confirmButton,
-                  onPressed: () {},
-                  child: const Text('Sahiplen')),
+                style: AppTheme.confirmButton,
+                onPressed: () {},
+                child: const Text('Sahiplen'),
+              ),
               ElevatedButton(
-                  style: AppTheme.cancelButton,
-                  onPressed: () {},
-                  child: const Text('Vazgeç')),
+                style: AppTheme.cancelButton,
+                onPressed: () {},
+                child: const Text('Vazgeç'),
+              ),
               OutlinedButton(onPressed: () {}, child: const Text('Detay')),
               const ElevatedButton(onPressed: null, child: Text('Pasif')),
             ],
@@ -90,10 +97,13 @@ class ThemeDemoScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           const _SectionTitle('Etiket ve giriş'),
-          const Wrap(spacing: 8, children: [
-            Chip(label: Text('Seviye 3')),
-            Chip(label: Text('120 altın')),
-          ]),
+          const Wrap(
+            spacing: 8,
+            children: [
+              Chip(label: Text('Seviye 3')),
+              Chip(label: Text('120 altın')),
+            ],
+          ),
           const SizedBox(height: 12),
           const TextField(decoration: InputDecoration(hintText: 'Takma adın')),
         ],
@@ -108,13 +118,14 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.w800)),
-      );
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Text(
+      label,
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+    ),
+  );
 }
 
 class _Swatch extends StatelessWidget {
@@ -134,14 +145,17 @@ class _Swatch extends StatelessWidget {
               color: color,
               borderRadius: BorderRadius.circular(AppRadii.input),
               border: Border.all(
-                  color: AppColors.textSecondary.withValues(alpha: 0.2)),
+                color: AppColors.textSecondary.withValues(alpha: 0.2),
+              ),
               boxShadow: AppTheme.softShadow,
             ),
           ),
           const SizedBox(height: 6),
-          Text(name,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
@@ -188,15 +202,22 @@ class _DemoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900, fontSize: 18)),
+                Text(
+                  title,
+                  style: text.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle,
-                    style: text.bodyMedium?.copyWith(
-                        color: AppColors.text,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15)),
+                Text(
+                  subtitle,
+                  style: text.bodyMedium?.copyWith(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
               ],
             ),
           ),

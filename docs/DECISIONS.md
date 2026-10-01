@@ -31,6 +31,6 @@
 - **Test çipi:** haritadaki "Ping gönder" geçici; Adım 1.6'da yürüyüş modu ping'i otomatik atınca kalkacak. Mock tespiti şimdilik istemci bildirimine bağlı, sunucu tarafı risk skoru Adım 1.5.
 
 ## Adım 1.3 — Claim animasyonu
-- **Ses:** Şimdilik `SystemSound.click` (paket/asset yok). Yumuşak "ding" asseti ve ses paketi, ayarlar ekranı (ses/titreşim anahtarı) gelince eklenecek; o zamana kadar `GameConfig.soundEnabled/hapticsEnabled` sabit.
+- **Ses/titreşim:** `audioplayers` (medya sesi, her claim'de yeni oynatıcı, tekrarlarda ton hafif yükselir) + `vibration` paketi (sistem "touch feedback" ayarından bağımsız; motor yoksa `HapticFeedback`). Ses `assets/audio/claim.wav`: Python ile sentezlendi (basamaklı yükseliş + hava + pop + glockenspiel üçlüsü, ~1 sn). Ayarlar ekranı gelene kadar `GameConfig.soundEnabled/hapticsEnabled` sabit.
 - **Overlay:** Kutlama ekran-merkezli Flutter overlay'i (harita native katman olduğu için dünya koordinatına bağlanmaz). Düşük donanım tespiti yok; `lite` bayrağı hazır, tespit sonra bağlanacak.
 - **Test çipi:** "Claim animasyonu dene" geçici; Adım 1.6'da ping çipiyle birlikte kalkacak.
