@@ -21,3 +21,5 @@
 - **users RLS:** Kullanıcı sadece kendi satırını okur, sadece `username` güncelleyebilir; insert yalnızca `handle_new_user` tetikleyicisi (security definer), delete auth cascade ile. Başkalarının profili (liderlik vb.) ileride kısıtlı görünüm/fonksiyonla açılacak.
 - **Kullanıcı adı:** `^[A-Za-z0-9_]{3,20}$` (DB check + istemci doğrulama). Alınmışsa/geçersizse tetikleyici `oyuncu_xxxxxxxx` atar. Moderasyon sonraki adımlarda.
 - **Çıkış butonu:** Geçici olarak harita sağ üstte; profil ekranına taşınacak.
+
+- **Google girişi:** Google girişi 0.6'dan ayrı bir adım (0.7). Adım 1.1 ve sonrasını engellemez, kapalı beta öncesi tamamlanmalı. 0.7'de doğrulanacaklar: debug ve release için ayrı SHA-1 parmak izleri, Supabase geri dönüş (redirect) adresi, Google Cloud hesabını ve anahtarları kullanıcının oluşturması. iOS'a geçilirken Apple'ın üçüncü taraf girişle birlikte 'Apple ile giriş' isteyip istemediği güncel kurallardan kontrol edilecek.

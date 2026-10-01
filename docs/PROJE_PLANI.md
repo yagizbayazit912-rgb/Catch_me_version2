@@ -356,6 +356,7 @@ seasons          (id, name, starts_at, ends_at)
 - [ ] H3 entegrasyon denemesi (konum → altıgen çizimi)
 
 ### 🟢 Faz 1 — Çekirdek Prototip (2–3 hafta)
+- [ ] Google ile giriş (Adım 0.7, kapalı beta öncesi tamamlanmalı)
 - [ ] Giriş (e-posta / Google / Apple)
 - [ ] Konum izni akışı ve arka plan konum takibi
 - [ ] Haritada kullanıcının konumu ve altıgenlerin çizimi
@@ -500,6 +501,7 @@ Her adımın "bitti sayılır" ölçütü vardır. Agent o ölçüt sağlanınca
 | 0.4 | H3 entegrasyonu: konum etrafındaki altıgenleri düz çiz | Konumun çevresinde Res 9 altıgenler çiziliyor |
 | **0.5** | **3D deneme (spike):** eğimli kamera, altıgeni yükseltme (extrusion), tek altıgende yükselme animasyonu, performans ölçümü | Çalışıyor mu / FPS nedir kararı `DECISIONS.md`'de. Çalışmazsa yedek plan seçilir |
 | 0.6 | Supabase projesi, giriş (auth), `users` tablosu, RLS | Giriş yapılıyor, RLS test edildi |
+| 0.7 | Google ile giriş: Google Cloud Console'da OAuth kurulumu, Android SHA-1 parmak izinin tanıtılması, Supabase'de Google sağlayıcısının açılması, giriş ekranına "Google ile devam et" butonu | Telefonda Google hesabıyla giriş yapılıp çıkılabiliyor, e-posta girişi de çalışmaya devam ediyor |
 
 ### Faz 1 — Çekirdek
 | Adım | İş | Bitti sayılır |

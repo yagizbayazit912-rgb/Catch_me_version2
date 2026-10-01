@@ -28,3 +28,4 @@ Proje: Konum tabanlı, altıgen (H3 Res 9) bölge sahiplenme oyunu. Flutter + Su
 
 ## Bekleyen işler
 Adım 1.2 başladığında ve bitince kullanıcıya hatırlat: Adım 1.6 (Yürüyüş modu) planlandı ve henüz yapılmadı. Yapılınca bu satırı sil.
+Adım 0.7 (Google girişi) planlandı ve henüz yapılmadı. Kapalı beta öncesi yapılmalı. Adım 1.2 bitince kullanıcıya hatırlat. Yapılınca bu satırı sil.
