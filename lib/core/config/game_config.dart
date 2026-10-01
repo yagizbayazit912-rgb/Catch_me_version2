@@ -13,6 +13,16 @@ abstract final class GameConfig {
   /// Yükseltilmiş altıgenin yüksekliği (metre).
   static const hexExtrusionHeight = 40.0;
 
+  /// Adım 1.4: tek seferde sorulacak en fazla görünür hücre (sunucudaki
+  /// `max_visible_hexes` ile aynı). Fazlaysa (çok uzak zoom) sahiplik çizilmez.
+  static const maxVisibleHexes = 600;
+
+  /// Görünür alan bu oranda genişletilir (kenardaki hücreler kaçmasın).
+  static const visibleBoundsPadding = 0.15;
+
+  /// Sahiplik önbelleğinin tazelik süresi (sn); sonra yeniden sorulur.
+  static const ownedCacheTtlSec = 60;
+
   /// Yükselme animasyonu süresi (ms).
   static const hexRiseMs = 1600;
 

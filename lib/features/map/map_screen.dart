@@ -7,6 +7,7 @@ import '../../core/config/game_config.dart';
 import '../../core/hex/hex_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/hex_repository.dart';
 import '../../data/ping_repository.dart';
 import 'claim_celebration.dart';
 
@@ -31,13 +32,26 @@ class _MapScreenState extends State<MapScreen>
   static const _hexSource = 'hex-src';
   static const _hexFill = 'hex-fill';
   static const _hexLine = 'hex-line';
-  // Adım 0.5 deneme: kullanıcının hücresi 3D blok olarak yükselir.
+  // Adım 1.4: görünür alandaki sahipli altıgenler (sabit yükseklikte bloklar).
+  static const _ownedSource = 'owned-src';
+  static const _ownedLayer = 'owned-layer';
+  // Sadece son claim edilen hücre; yükselme animasyonu bu katmanda oynar,
+  // böylece kare başı güncelleme sahipli altıgen sayısından bağımsızdır.
   static const _hex3dSource = 'hex3d-src';
   static const _hex3dLayer = 'hex3d-layer';
 
   final _hex = HexService();
   final _myCell = HexService(ringSize: 0);
   final _ping = PingRepository();
+  final _hexRepo = HexRepository();
+
+  /// Sahiplik önbelleği: sorulan her hücrenin zamanı, sahipliler ayrı.
+  final _owned = <String, OwnedHex>{};
+  final _fetchedAt = <String, DateTime>{};
+  Set<String> _visible = {};
+  String? _risingCell;
+  bool _ownedBusy = false;
+  bool _ownedAgain = false;
   String? _pingText;
   bool _celebrating = false;
   late final AnimationController _rise = AnimationController(
@@ -93,7 +107,7 @@ class _MapScreenState extends State<MapScreen>
   /// hepsi birlikte gönderilir.
   FillExtrusionLayerProperties _hex3dProps(double height) =>
       FillExtrusionLayerProperties(
-        fillExtrusionColor: _hexColor(AppColors.primary),
+        fillExtrusionColor: _hexColor(AppColors.ownHex),
         fillExtrusionOpacity: 0.9,
         fillExtrusionHeight: height,
         fillExtrusionBase: 0.0,
@@ -121,8 +135,30 @@ class _MapScreenState extends State<MapScreen>
 
   /// Adım 1.3: claim anı. Haptik + ses, blok yükselmesi ve kutlama overlay'i.
   /// Hiçbiri UI'yı beklemez; tekrar tetiklenirse kutlama baştan başlar.
-  void _celebrateClaim() {
+  /// [h3] sunucunun verdiği yeni sahipli hücre (Adım 1.4: önbelleğe eklenir);
+  /// test çipinde null → bulunduğum hücre sadece animasyon için yükselir.
+  Future<void> _celebrateClaim([String? h3]) async {
     playClaimFeedback();
+    final p = _position;
+    final cell =
+        h3 ?? (p == null ? null : _myCell.cellAt(p.latitude, p.longitude));
+    if (h3 != null) {
+      _owned[h3] = OwnedHex(h3: h3, isMine: true, colorSeed: 0);
+      _fetchedAt[h3] = DateTime.now();
+    }
+    _rise.value = 0;
+    _risingCell = cell;
+    final map = _map;
+    if (map != null && _hexDrawn && cell != null) {
+      try {
+        await map.setGeoJsonSource(
+          _hex3dSource,
+          HexService.collection([_hex.feature(cell)]),
+        );
+        await _renderOwned();
+      } catch (_) {}
+    }
+    if (!mounted) return;
     _playRise();
     setState(() => _celebrating = false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -168,10 +204,8 @@ class _MapScreenState extends State<MapScreen>
     final map = _map;
     if (p == null || map == null) return;
     final data = _hex.hexagonsAround(p.latitude, p.longitude);
-    final mine = _myCell.hexagonsAround(p.latitude, p.longitude);
     if (_hexDrawn) {
       await map.setGeoJsonSource(_hexSource, data);
-      await map.setGeoJsonSource(_hex3dSource, mine);
       return;
     }
     _hexDrawn = true;
@@ -193,9 +227,110 @@ class _MapScreenState extends State<MapScreen>
         lineOpacity: 0.8,
       ),
     );
-    await map.addGeoJsonSource(_hex3dSource, mine);
-    await map.addFillExtrusionLayer(_hex3dSource, _hex3dLayer, _hex3dProps(0));
-    _playRise();
+    await map.addGeoJsonSource(_ownedSource, _ownedCollection());
+    await map.addFillExtrusionLayer(
+      _ownedSource,
+      _ownedLayer,
+      FillExtrusionLayerProperties(
+        fillExtrusionColor: [Expressions.get, 'color'],
+        fillExtrusionOpacity: 0.9,
+        fillExtrusionHeight: GameConfig.hexExtrusionHeight,
+        fillExtrusionBase: 0.0,
+        fillExtrusionVerticalGradient: true,
+      ),
+    );
+    final rising = _risingCell;
+    await map.addGeoJsonSource(
+      _hex3dSource,
+      HexService.collection([if (rising != null) _hex.feature(rising)]),
+    );
+    await map.addFillExtrusionLayer(
+      _hex3dSource,
+      _hex3dLayer,
+      _hex3dProps(
+        GameConfig.hexExtrusionHeight *
+            Curves.elasticOut.transform(_rise.value),
+      ),
+    );
+    _refreshOwned();
+  }
+
+  /// Görünür + sahipli hücreler (yükselen hücre hariç, üst üste binmesin).
+  Map<String, dynamic> _ownedCollection() => HexService.collection([
+    for (final h in _owned.values)
+      if (_visible.contains(h.h3) && h.h3 != _risingCell)
+        _hex.feature(h.h3, {'color': _hexColor(_ownedColor(h))}),
+  ]);
+
+  Color _ownedColor(OwnedHex h) {
+    if (h.isMine) return AppColors.ownHex;
+    const p = AppColors.otherPlayerPalette;
+    return p[h.colorSeed % p.length];
+  }
+
+  Future<void> _renderOwned() async {
+    final map = _map;
+    if (map == null || !_hexDrawn) return;
+    await map.setGeoJsonSource(_ownedSource, _ownedCollection());
+  }
+
+  /// Kamera durunca: görünür hücreleri hesapla, önbellekte olmayan veya
+  /// eskiyenleri sunucuya sor, sonra sadece görünenleri çiz. Çok uzak
+  /// zoom'da (hücre sayısı sınırı aşınca) sahiplik çizilmez.
+  Future<void> _refreshOwned() async {
+    final map = _map;
+    if (map == null || !_hexDrawn) return;
+    if (_ownedBusy) {
+      _ownedAgain = true;
+      return;
+    }
+    _ownedBusy = true;
+    try {
+      final b = await map.getVisibleRegion();
+      final padLat =
+          (b.northeast.latitude - b.southwest.latitude) *
+          GameConfig.visibleBoundsPadding;
+      final padLng =
+          (b.northeast.longitude - b.southwest.longitude) *
+          GameConfig.visibleBoundsPadding;
+      final cells = _hex.cellsInBounds(
+        b.southwest.latitude - padLat,
+        b.southwest.longitude - padLng,
+        b.northeast.latitude + padLat,
+        b.northeast.longitude + padLng,
+      );
+      if (cells.length > GameConfig.maxVisibleHexes) {
+        _visible = {};
+      } else {
+        _visible = cells.toSet();
+        final now = DateTime.now();
+        final stale = [
+          for (final c in cells)
+            if (now.difference(_fetchedAt[c] ?? DateTime(0)).inSeconds >=
+                GameConfig.ownedCacheTtlSec)
+              c,
+        ];
+        if (stale.isNotEmpty) {
+          final rows = await _hexRepo.ownedIn(stale);
+          for (final c in stale) {
+            _owned.remove(c);
+            _fetchedAt[c] = now;
+          }
+          for (final r in rows) {
+            _owned[r.h3] = r;
+          }
+        }
+      }
+      await _renderOwned();
+    } catch (_) {
+      // Ağ/katman hatası: bir sonraki kamera hareketinde tekrar denenir.
+    } finally {
+      _ownedBusy = false;
+      if (_ownedAgain && mounted) {
+        _ownedAgain = false;
+        _refreshOwned();
+      }
+    }
   }
 
   void _flyToUser() {
@@ -222,7 +357,7 @@ class _MapScreenState extends State<MapScreen>
       final pos = await Geolocator.getCurrentPosition();
       final res = await _ping.send(pos);
       if (res.ok) {
-        if (res.claimed) _celebrateClaim();
+        if (res.claimed) _celebrateClaim(res.h3);
         final local = _myCell.cellAt(pos.latitude, pos.longitude);
         final match = res.h3 == local ? '✓ eşleşti' : '✗ FARKLI ($local)';
         text =
@@ -310,6 +445,7 @@ class _MapScreenState extends State<MapScreen>
                 _map = c;
                 _flyToUser();
               },
+              onCameraIdle: _refreshOwned,
               onStyleLoadedCallback: () {
                 _hexDrawn = false;
                 _drawHexes();

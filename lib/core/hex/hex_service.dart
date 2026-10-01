@@ -23,21 +23,48 @@ class HexService {
       h3lib.LatLng(lat: lat, lng: lng),
       resolution,
     );
-    final features = <Map<String, dynamic>>[];
-    for (final cell in _h3.gridDisk(center, ringSize)) {
-      final ring = [
-        for (final p in _h3.cellToBoundary(cell)) [p.lng, p.lat],
-      ];
-      ring.add(ring.first);
-      features.add({
-        'type': 'Feature',
-        'properties': {'h3': cell.toRadixString(16)},
-        'geometry': {
-          'type': 'Polygon',
-          'coordinates': [ring],
-        },
-      });
-    }
-    return {'type': 'FeatureCollection', 'features': features};
+    return collection([
+      for (final cell in _h3.gridDisk(center, ringSize))
+        feature(cell.toRadixString(16)),
+    ]);
   }
+
+  /// Dikdörtgen alanın (görünür bölge) içindeki hücreler.
+  List<String> cellsInBounds(
+    double south,
+    double west,
+    double north,
+    double east,
+  ) => [
+    for (final c in _h3.polygonToCells(
+      coordinates: [
+        h3lib.LatLng(lat: south, lng: west),
+        h3lib.LatLng(lat: south, lng: east),
+        h3lib.LatLng(lat: north, lng: east),
+        h3lib.LatLng(lat: north, lng: west),
+      ],
+      resolution: resolution,
+    ))
+      c.toRadixString(16),
+  ];
+
+  /// Tek hücrenin GeoJSON Feature'ı; [props] çizim için ek alanlar.
+  Map<String, dynamic> feature(String h3, [Map<String, dynamic>? props]) {
+    final ring = [
+      for (final p in _h3.cellToBoundary(BigInt.parse(h3, radix: 16)))
+        [p.lng, p.lat],
+    ];
+    ring.add(ring.first);
+    return {
+      'type': 'Feature',
+      'properties': {'h3': h3, ...?props},
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [ring],
+      },
+    };
+  }
+
+  static Map<String, dynamic> collection(List<Map<String, dynamic>> features) =>
+      {'type': 'FeatureCollection', 'features': features};
 }

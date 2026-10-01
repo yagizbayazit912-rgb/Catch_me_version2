@@ -24,4 +24,16 @@ abstract final class AppColors {
     accentButter,
     warning,
   ];
+
+  /// Adım 1.4: haritada kendi bölgem.
+  static const ownHex = primary;
+
+  /// Başka oyuncuların bölgeleri (kendi rengimle karışmasın diye primary yok).
+  static const otherPlayerPalette = <Color>[
+    secondary,
+    accentPeach,
+    accentLavender,
+    accentButter,
+    warning,
+  ];
 }

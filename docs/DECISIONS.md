@@ -34,3 +34,9 @@
 - **Ses/titreşim:** `audioplayers` (medya sesi, her claim'de yeni oynatıcı, tekrarlarda ton hafif yükselir) + `vibration` paketi (sistem "touch feedback" ayarından bağımsız; motor yoksa `HapticFeedback`). Ses `assets/audio/claim.wav`: Python ile sentezlendi (basamaklı yükseliş + hava + pop + glockenspiel üçlüsü, ~1 sn). Ayarlar ekranı gelene kadar `GameConfig.soundEnabled/hapticsEnabled` sabit.
 - **Overlay:** Kutlama ekran-merkezli Flutter overlay'i (harita native katman olduğu için dünya koordinatına bağlanmaz). Düşük donanım tespiti yok; `lite` bayrağı hazır, tespit sonra bağlanacak.
 - **Test çipi:** "Claim animasyonu dene" geçici; Adım 1.6'da ping çipiyle birlikte kalkacak.
+
+## Adım 1.4 — Sahipli altıgen çizimi
+- **Okuma:** `owned_hexes_in(text[])` RPC; istemci görünür hücreleri gönderir (Postgres'te h3 yok, bbox sorgusu yapılamaz). Hücre sınırı `game_config.max_visible_hexes` = `GameConfig.maxVisibleHexes` (600, elle senkron). Dönen: h3, is_mine, color_seed (owner_id hash'i, 0–999). Sahibin kimliği/adı yok; gerekirse ileride kısıtlı görünümle.
+- **Renk:** kendi bölge `AppColors.ownHex` (nane), diğerleri `otherPlayerPalette` (nane hariç). Aynı renge düşen farklı oyuncular olabilir; oyuncu renk seçimi kozmetik adımında.
+- **Önbellek:** hücre başına 60 sn TTL (`GameConfig.ownedCacheTtlSec`), sadece görünür sahipliler çizilir. Gerçek zamanlı güncelleme (başkası claim edince) yok; TTL ile yenilenir.
+- **Yükseklik:** tüm sahipliler `hexExtrusionHeight`; yapı seviyesine göre yükseklik yapılar adımında.
