@@ -17,9 +17,9 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 - [ ] Android 10+ arka plan konumu: önce ön plan izni, sonra ayrı bir "her zaman izin" adımı ister. Kalıcı takip için foreground service + bildirim gerekir.
 - [x] ✔ Supabase tablolarında RLS kapalıysa veriler herkese açık kalır. Her yeni tabloda RLS ve politika aynı adımda yazılır; ayrıca Supabase varsayılan grant'leri `revoke all` ile geri alınır (Adım 0.6).
 - [ ] H3 indeksi `string` olarak saklanır; çözünürlük sabit kodlanmaz (config: şimdilik Res 9).
-- [ ] Haritada tüm altıgenleri çizme; sadece görünür alanı çiz/önbelleğe al.
+- [x] ✔ Haritada tüm altıgenleri çizme; sadece görünür alanı çiz/önbelleğe al (Adım 1.4: kamera durunca görünür hücreler + 60 sn TTL önbellek, cihazda çalıştı).
 - [ ] Emülatörde konum simülasyonu gerçek GPS gürültüsünü göstermez; hız/doğruluk filtreleri gerçek cihazda ayrıca test edilmeli.
-- [x] ✔ Fill-extrusion + kare başına `setLayerProperties` ile yükseklik animasyonu `maplibre_gl` 0.27.1'de Android'de çalışıyor (Adım 0.5, ~119 güncelleme/sn). Not: sahipli çok altıgenle performans Adım 1.4'te yeniden test edilecek.
+- [x] ✔ Fill-extrusion + kare başına `setLayerProperties` ile yükseklik animasyonu `maplibre_gl` 0.27.1'de Android'de çalışıyor (Adım 0.5, ~119 güncelleme/sn). Not: Adım 1.4'te animasyon tek hücrelik ayrı katmana alındı (maliyet sahipli sayısından bağımsız olmalı), ama çok sahipli altıgenle cihazda ölçüm **henüz yapılmadı** — çok bölge olunca tekrar bak.
 - [ ] Animasyonlar (partikül, konfeti) düşük donanımlı Android'de kare düşürebilir; yedek mod (basit animasyon) şart.
 
 ### Doğrulanmış kurallar
