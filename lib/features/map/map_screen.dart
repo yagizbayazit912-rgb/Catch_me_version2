@@ -70,9 +70,7 @@ class _MapScreenState extends State<MapScreen>
     try {
       await map.setLayerProperties(
         _hex3dLayer,
-        FillExtrusionLayerProperties(
-          fillExtrusionHeight: GameConfig.hexExtrusionHeight * t,
-        ),
+        _hex3dProps(GameConfig.hexExtrusionHeight * t),
       );
       _riseUpdates++;
     } catch (_) {
@@ -81,6 +79,18 @@ class _MapScreenState extends State<MapScreen>
       _riseBusy = false;
     }
   }
+
+  /// 3D altıgen katmanının tüm özellikleri. `setLayerProperties` null
+  /// alanları varsayılana sıfırladığı için (renk → siyah) her güncellemede
+  /// hepsi birlikte gönderilir.
+  FillExtrusionLayerProperties _hex3dProps(double height) =>
+      FillExtrusionLayerProperties(
+        fillExtrusionColor: _hexColor(AppColors.primary),
+        fillExtrusionOpacity: 0.9,
+        fillExtrusionHeight: height,
+        fillExtrusionBase: 0.0,
+        fillExtrusionVerticalGradient: true,
+      );
 
   /// Yükselme animasyonunu oynatır. "Hareketi azalt" açıksa anında son hal.
   Future<void> _playRise() async {
@@ -166,22 +176,7 @@ class _MapScreenState extends State<MapScreen>
     await map.addFillExtrusionLayer(
       _hex3dSource,
       _hex3dLayer,
-      FillExtrusionLayerProperties(
-        // Düz "#hex" metni Android'de extrusion için renge çevrilmiyor
-        // (siyah çıkıyor) → açık rgb ifadesi gönderilir.
-        fillExtrusionColor: [
-          'rgb',
-          (AppColors.primary.r * 255).round(),
-          (AppColors.primary.g * 255).round(),
-          (AppColors.primary.b * 255).round(),
-        ],
-        // < 1 opaklık native'de ekran dışı çizime düşüyor; Flutter doku
-        // modunda siyah çıkma şüphesi → tam opak.
-        fillExtrusionOpacity: 1.0,
-        fillExtrusionHeight: 0.0,
-        fillExtrusionBase: 0.0,
-        fillExtrusionVerticalGradient: true,
-      ),
+      _hex3dProps(0),
     );
     _playRise();
   }

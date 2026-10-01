@@ -23,7 +23,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 - [ ] Animasyonlar (partikül, konfeti) düşük donanımlı Android'de kare düşürebilir; yedek mod (basit animasyon) şart.
 
 ### Doğrulanmış kurallar
-*(Henüz yok. İlk doğrulanan kural buraya gelir.)*
+- `maplibre_gl` `setLayerProperties` null alanları varsayılana sıfırlar → katmanı güncellerken tüm özellikleri birlikte gönder (Adım 0.5).
 
 ---
 
@@ -41,8 +41,8 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ### [2026-10-01] Adım 0.5 — 3D deneme (spike)
 ✅ İyi giden: `maplibre_gl` 0.27.1 kaynağında fill-extrusion + Android `setLayerProperties` desteği doğrulandı; eğimli kamera + tek altıgen yükselme animasyonu (elasticOut, kare başına setLayerProperties) yazıldı, `flutter analyze` temiz.
 ✅ Cihazda (SM S721B) çalıştı: ~119 güncelleme/sn, akıcı.
-❌ Hata / sorun: Extrusion bloğu siyah çıktı → renk `"#hex"` metni olarak gitti, Android extrusion'da renge çevrilmedi → `['rgb', r, g, b]` ifadesine geçildi (cihazda doğrulanacak). Animasyon hızlıydı → 1600 ms.
-📌 Çıkarılan kural: Platform kanalına kare başına çağrı atarken önceki çağrı bitmeden yenisini atma (busy bayrağı).
+❌ Hata / sorun: Extrusion bloğu siyah çıktı → 5 tahmin (renk biçimi, opaklık, gradient, veri güdümlü renk, ışık) boşa gitti. Kullanıcı "renk bir an görünüp gidiyor" deyince sebep bulundu: `setLayerProperties` null alanları varsayılana sıfırlıyor → her karede tüm özellikler gönderildi, düzeldi (cihazda doğrulandı). Cihaza adb ile bağlanıp `screencap` ile kendim test ettim: `D:/Androidsdk/platform-tools/adb`.
+📌 Çıkarılan kural: `maplibre_gl` `setLayerProperties` her zaman TÜM özellikleri gönderir (eksikler varsayılana döner). Görsel hata sürerse tahmin yerine önce "ne zaman bozuluyor?" sorusunu sor.
 
 ### [2026-10-01] Adım 0.4 — H3 + düz altıgenler
 ✅ İyi giden: `h3_flutter_plus` (FFI) eklendi; `HexService` konum etrafında gridDisk halkasını GeoJSON olarak üretiyor, MapLibre fill+line katmanıyla çiziliyor. Çözünürlük/halka `GameConfig`'ten (Res 9, 2 halka). `flutter analyze` temiz; **Samsung SM S721B (Android 16) cihazında altıgenler göründü, kullanıcı doğruladı.**
