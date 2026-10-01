@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Gizli ayarlar (Supabase URL/anahtar) — asla commit'leme
+.env
+.env.*
+!.env.example

@@ -15,4 +15,9 @@
 - **Ölçüm:** Üstteki "3D tekrar • N güncelleme/sn" çipi, animasyon sırasında native katmana kaç güncelleme gittiğini gösterir (≈ akıcılık göstergesi; harita FPS'i değil).
 - **Yedek plan (çalışmazsa / takılırsa):** (1) Akıcı değilse: yükseltme kalır, animasyon Flutter tarafında overlay (ölçeklenen altıgen sprite + gölge) ile oynanır, bitince katman tek seferde son yüksekliğe ayarlanır. (2) Fill-extrusion hiç görünmezse: altıgenler düz çizilir, yükseklik hissi sprite + blob gölge ile verilir (PROJE_PLANI 14.1-A yedek yolu).
 
-- **Arka plan konum:** önce Adım 1.2 uygulama açıkken çalışır, sonra Adım 1.6 ile Yürüyüş modu eklenir. 1.6'da doğrulanacaklar: Android 13+ bildirim izni, ayrı "her zaman izin" gerekip gerekmediği, Samsung pil optimizasyonunun takibi öldürüp öldürmediği, Google Play'in arka plan konum politikası.
+## Adım 0.6 — Supabase / auth
+- **Gizli ayar:** `flutter_dotenv` yerine `--dart-define-from-file=.env` (dosya APK asset'i olmaz). Şablon `.env.example`; VS Code `launch.json` bu argümanla çalıştırır. `.env` yoksa uygulama çökmez, uyarı ekranı gösterir. Not: publishable anahtar istemcide zaten açıktır; güvenlik RLS'tedir. `sb_secret_`/service_role istemciye asla girmez.
+- **Giriş yöntemi:** Şimdilik e-posta + şifre (deep link gerektirmez). Google ile giriş / misafir hesabı sonraya. Geliştirmede "Confirm email" kapalı olabilir; **yayından önce açılacak**.
+- **users RLS:** Kullanıcı sadece kendi satırını okur, sadece `username` güncelleyebilir; insert yalnızca `handle_new_user` tetikleyicisi (security definer), delete auth cascade ile. Başkalarının profili (liderlik vb.) ileride kısıtlı görünüm/fonksiyonla açılacak.
+- **Kullanıcı adı:** `^[A-Za-z0-9_]{3,20}$` (DB check + istemci doğrulama). Alınmışsa/geçersizse tetikleyici `oyuncu_xxxxxxxx` atar. Moderasyon sonraki adımlarda.
+- **Çıkış butonu:** Geçici olarak harita sağ üstte; profil ekranına taşınacak.

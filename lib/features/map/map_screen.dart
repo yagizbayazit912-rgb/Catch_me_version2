@@ -10,7 +10,10 @@ import '../../core/theme/app_theme.dart';
 
 /// Ana harita ekranı: pastel MapLibre stili + ön plan konum izni.
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.onSignOut});
+
+  /// Geçici çıkış butonu (Adım 0.6); profil ekranı gelince oraya taşınacak.
+  final VoidCallback? onSignOut;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -104,8 +107,10 @@ class _MapScreenState extends State<MapScreen>
     await _rise.forward(from: 0).orCancel.catchError((_) {});
     sw.stop();
     if (mounted) {
-      setState(() => _riseUpdatesPerSec =
-          _riseUpdates * 1000 / sw.elapsedMilliseconds.clamp(1, 1 << 30));
+      setState(
+        () => _riseUpdatesPerSec =
+            _riseUpdates * 1000 / sw.elapsedMilliseconds.clamp(1, 1 << 30),
+      );
     }
   }
 
@@ -173,11 +178,7 @@ class _MapScreenState extends State<MapScreen>
       ),
     );
     await map.addGeoJsonSource(_hex3dSource, mine);
-    await map.addFillExtrusionLayer(
-      _hex3dSource,
-      _hex3dLayer,
-      _hex3dProps(0),
-    );
+    await map.addFillExtrusionLayer(_hex3dSource, _hex3dLayer, _hex3dProps(0));
     _playRise();
   }
 
@@ -186,11 +187,13 @@ class _MapScreenState extends State<MapScreen>
     if (p == null || _map == null) return;
     _drawHexes();
     _map!.animateCamera(
-      CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(p.latitude, p.longitude),
-        zoom: _defaultZoom,
-        tilt: GameConfig.mapTilt,
-      )),
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(p.latitude, p.longitude),
+          zoom: _defaultZoom,
+          tilt: GameConfig.mapTilt,
+        ),
+      ),
     );
   }
 
@@ -205,9 +208,11 @@ class _MapScreenState extends State<MapScreen>
           child: ActionChip(
             backgroundColor: AppColors.surface,
             avatar: const Icon(Icons.view_in_ar_rounded, color: AppColors.text),
-            label: Text(rate == null
-                ? '3D yükselt'
-                : '3D tekrar • ${rate.toStringAsFixed(0)} güncelleme/sn'),
+            label: Text(
+              rate == null
+                  ? '3D yükselt'
+                  : '3D tekrar • ${rate.toStringAsFixed(0)} güncelleme/sn',
+            ),
             onPressed: _playRise,
           ),
         ),
@@ -246,6 +251,20 @@ class _MapScreenState extends State<MapScreen>
           else
             const Center(child: CircularProgressIndicator()),
           if (ready) _riseTestChip(),
+          if (widget.onSignOut != null)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: IconButton.filledTonal(
+                    tooltip: 'Çıkış yap',
+                    onPressed: widget.onSignOut,
+                    icon: const Icon(Icons.logout_rounded),
+                  ),
+                ),
+              ),
+            ),
           if (_state != _LocState.ready && _state != _LocState.loading)
             _PermissionCard(state: _state, onRetry: _resolveLocation),
         ],
@@ -273,23 +292,23 @@ class _PermissionCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final (title, body, action, onTap) = switch (state) {
       _LocState.deniedForever => (
-          'Konum izni kapalı',
-          'Haritada seni görebilmemiz için ayarlardan konum iznini aç.',
-          'Ayarlara git',
-          Geolocator.openAppSettings,
-        ),
+        'Konum izni kapalı',
+        'Haritada seni görebilmemiz için ayarlardan konum iznini aç.',
+        'Ayarlara git',
+        Geolocator.openAppSettings,
+      ),
       _LocState.serviceOff => (
-          'Konum servisi kapalı',
-          'Telefonunun konumunu açıp tekrar dene.',
-          'Konum ayarları',
-          Geolocator.openLocationSettings,
-        ),
+        'Konum servisi kapalı',
+        'Telefonunun konumunu açıp tekrar dene.',
+        'Konum ayarları',
+        Geolocator.openLocationSettings,
+      ),
       _ => (
-          'Konum izni gerekli',
-          'Bölgeleri keşfetmek için uygulama açıkken konumunu kullanırız.',
-          'İzin ver',
-          () async => onRetry(),
-        ),
+        'Konum izni gerekli',
+        'Bölgeleri keşfetmek için uygulama açıkken konumunu kullanırız.',
+        'İzin ver',
+        () async => onRetry(),
+      ),
     };
     return SafeArea(
       child: Align(
@@ -305,13 +324,19 @@ class _PermissionCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(title,
-                  style: text.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+              Text(
+                title,
+                style: text.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 6),
-              Text(body,
-                  textAlign: TextAlign.center,
-                  style: text.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700, fontSize: 15)),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: text.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -325,7 +350,9 @@ class _PermissionCard extends StatelessWidget {
                       state == _LocState.serviceOff) ...[
                     const SizedBox(width: 12),
                     OutlinedButton(
-                        onPressed: onRetry, child: const Text('Tekrar dene')),
+                      onPressed: onRetry,
+                      child: const Text('Tekrar dene'),
+                    ),
                   ],
                 ],
               ),

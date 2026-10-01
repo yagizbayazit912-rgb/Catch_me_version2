@@ -38,6 +38,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 0.6 — Supabase + auth + users + RLS
+✅ İyi giden: `supabase_flutter` 2.18 eklendi; URL/anahtar `--dart-define-from-file=.env` ile (asset'e gömülmez, `.env` gitignore'da, `git check-ignore` ile doğrulandı). `users` tablosu + kayıt tetikleyicisi + RLS migration'ı ve SQL Editor'de çalışan, kendini geri alan RLS testi (`supabase/tests/rls_users.sql`) yazıldı. `flutter analyze` temiz, mevcut test geçti.
+❌ Hata / sorun: Supabase yeni tablolarda anon/authenticated'a varsayılan TÜM yetkileri verir → sadece RLS'e güvenmek yerine `revoke all` + kolon bazlı `grant update(username)`. `anonKey` deprecated → `publishableKey`. Bash heredoc'u Türkçe kesme işaretli Dart kodunda bozuldu → Write aracı kullanıldı. **Henüz doğrulanmadı:** migration/RLS testi Supabase'de ve cihazda giriş, kullanıcı çalıştırınca işaretlenecek.
+📌 Çıkarılan kural: Her yeni tabloda `revoke all ... from anon, authenticated` + gereken grant'lar + RLS politikası aynı migration'da.
+
 ### [2026-10-01] Adım 0.5 — 3D deneme (spike)
 ✅ İyi giden: `maplibre_gl` 0.27.1 kaynağında fill-extrusion + Android `setLayerProperties` desteği doğrulandı; eğimli kamera + tek altıgen yükselme animasyonu (elasticOut, kare başına setLayerProperties) yazıldı, `flutter analyze` temiz.
 ✅ Cihazda (SM S721B) çalıştı: ~119 güncelleme/sn, akıcı.
