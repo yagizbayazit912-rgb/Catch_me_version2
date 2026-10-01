@@ -364,6 +364,7 @@ seasons          (id, name, starts_at, ends_at)
 - [ ] Hafif 3D görünüm (eğimli kamera, yükseltilmiş altıgenler) — Adım 0.5 sonucuna göre
 - [ ] Bölge sahiplenme animasyonu (bölüm 14.1-B), haptik ve ses
 - [ ] Temel hile kontrolleri (hız, doğruluk)
+- [ ] Yürüyüş modu (Adım 1.6)
 
 ### 🟡 Faz 2 — Ekonomi ve Yapılar (2–3 hafta)
 - [ ] Altın bakiyesi, `transactions` altyapısı
@@ -508,6 +509,7 @@ Her adımın "bitti sayılır" ölçütü vardır. Agent o ölçüt sağlanınca
 | 1.3 | Sahiplenme animasyonu (bölüm 14.1-B), haptik, ses | Claim anı tarif edilen sırayla oynuyor, atlanabiliyor |
 | 1.4 | Sahipli altıgenlerin renkli/yükseltilmiş çizimi | Kendi ve başkasının bölgeleri farklı renkte görünüyor |
 | 1.5 | Temel hile kontrolleri (mock location, hız) | Sahte/hızlı konum reddediliyor |
+| 1.6 | Yürüyüş modu: "Yürüyüşe başla" butonu, foreground service ve kalıcı bildirim ("Catch Me aktif"), ekran kapalıyken konum takibi, hız 25 km/s üstünde otomatik duraklama, açık/kapalı durum göstergesi | Telefon cepte ve ekran kapalıyken 10 dk yürüyüşte presence birikiyor, bildirim görünüyor, durdurunca takip bitiyor |
 
 ### Faz 2 — Ekonomi ve Yapılar
 | Adım | İş | Bitti sayılır |

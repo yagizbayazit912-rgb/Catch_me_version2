@@ -14,3 +14,5 @@
 - **Yöntem:** Eğim `GameConfig.mapTilt` (50°). Kullanıcının hücresi ayrı kaynak + fill-extrusion katmanı. Animasyon: Dart `AnimationController` + `Curves.elasticOut`, her karede `setLayerProperties(fillExtrusionHeight)`; önceki çağrı bitmeden yenisi atılmaz. Yükseklik/süre `GameConfig`'ten (40 m, 900 ms). Hareketi azalt → anında son yükseklik.
 - **Ölçüm:** Üstteki "3D tekrar • N güncelleme/sn" çipi, animasyon sırasında native katmana kaç güncelleme gittiğini gösterir (≈ akıcılık göstergesi; harita FPS'i değil).
 - **Yedek plan (çalışmazsa / takılırsa):** (1) Akıcı değilse: yükseltme kalır, animasyon Flutter tarafında overlay (ölçeklenen altıgen sprite + gölge) ile oynanır, bitince katman tek seferde son yüksekliğe ayarlanır. (2) Fill-extrusion hiç görünmezse: altıgenler düz çizilir, yükseklik hissi sprite + blob gölge ile verilir (PROJE_PLANI 14.1-A yedek yolu).
+
+- **Arka plan konum:** önce Adım 1.2 uygulama açıkken çalışır, sonra Adım 1.6 ile Yürüyüş modu eklenir. 1.6'da doğrulanacaklar: Android 13+ bildirim izni, ayrı "her zaman izin" gerekip gerekmediği, Samsung pil optimizasyonunun takibi öldürüp öldürmediği, Google Play'in arka plan konum politikası.
