@@ -167,7 +167,14 @@ class _MapScreenState extends State<MapScreen>
       _hex3dSource,
       _hex3dLayer,
       FillExtrusionLayerProperties(
-        fillExtrusionColor: _hexColor(AppColors.primary),
+        // Düz "#hex" metni Android'de extrusion için renge çevrilmiyor
+        // (siyah çıkıyor) → açık rgb ifadesi gönderilir.
+        fillExtrusionColor: [
+          'rgb',
+          (AppColors.primary.r * 255).round(),
+          (AppColors.primary.g * 255).round(),
+          (AppColors.primary.b * 255).round(),
+        ],
         fillExtrusionOpacity: 0.9,
         fillExtrusionHeight: 0.0,
         fillExtrusionBase: 0.0,

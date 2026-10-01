@@ -19,7 +19,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 - [ ] H3 indeksi `string` olarak saklanır; çözünürlük sabit kodlanmaz (config: şimdilik Res 9).
 - [ ] Haritada tüm altıgenleri çizme; sadece görünür alanı çiz/önbelleğe al.
 - [ ] Emülatörde konum simülasyonu gerçek GPS gürültüsünü göstermez; hız/doğruluk filtreleri gerçek cihazda ayrıca test edilmeli.
-- [ ] Haritada 3D (fill-extrusion) ve altıgen yüksekliği animasyonu Flutter MapLibre paketinde nasıl destekleniyor → **Adım 0.5'te doğrulanacak**, varsayma.
+- [x] ✔ Fill-extrusion + kare başına `setLayerProperties` ile yükseklik animasyonu `maplibre_gl` 0.27.1'de Android'de çalışıyor (Adım 0.5, ~119 güncelleme/sn).
 - [ ] Animasyonlar (partikül, konfeti) düşük donanımlı Android'de kare düşürebilir; yedek mod (basit animasyon) şart.
 
 ### Doğrulanmış kurallar
@@ -40,7 +40,8 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-01] Adım 0.5 — 3D deneme (spike)
 ✅ İyi giden: `maplibre_gl` 0.27.1 kaynağında fill-extrusion + Android `setLayerProperties` desteği doğrulandı; eğimli kamera + tek altıgen yükselme animasyonu (elasticOut, kare başına setLayerProperties) yazıldı, `flutter analyze` temiz.
-❌ Hata / sorun: Henüz cihazda denenmedi → sonuç DECISIONS.md'de "doğrulanmadı" olarak duruyor.
+✅ Cihazda (SM S721B) çalıştı: ~119 güncelleme/sn, akıcı.
+❌ Hata / sorun: Extrusion bloğu siyah çıktı → renk `"#hex"` metni olarak gitti, Android extrusion'da renge çevrilmedi → `['rgb', r, g, b]` ifadesine geçildi (cihazda doğrulanacak). Animasyon hızlıydı → 1600 ms.
 📌 Çıkarılan kural: Platform kanalına kare başına çağrı atarken önceki çağrı bitmeden yenisini atma (busy bayrağı).
 
 ### [2026-10-01] Adım 0.4 — H3 + düz altıgenler

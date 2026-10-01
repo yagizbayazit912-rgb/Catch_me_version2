@@ -14,5 +14,5 @@ abstract final class GameConfig {
   static const hexExtrusionHeight = 40.0;
 
   /// Yükselme animasyonu süresi (ms).
-  static const hexRiseMs = 900;
+  static const hexRiseMs = 1600;
 }
