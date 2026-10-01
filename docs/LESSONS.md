@@ -19,11 +19,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 - [ ] H3 indeksi `string` olarak saklanır; çözünürlük sabit kodlanmaz (config: şimdilik Res 9).
 - [ ] Haritada tüm altıgenleri çizme; sadece görünür alanı çiz/önbelleğe al.
 - [ ] Emülatörde konum simülasyonu gerçek GPS gürültüsünü göstermez; hız/doğruluk filtreleri gerçek cihazda ayrıca test edilmeli.
-- [x] ✔ Fill-extrusion + kare başına `setLayerProperties` ile yükseklik animasyonu `maplibre_gl` 0.27.1'de Android'de çalışıyor (Adım 0.5, ~119 güncelleme/sn).
+- [x] ✔ Fill-extrusion + kare başına `setLayerProperties` ile yükseklik animasyonu `maplibre_gl` 0.27.1'de Android'de çalışıyor (Adım 0.5, ~119 güncelleme/sn). Not: sahipli çok altıgenle performans Adım 1.4'te yeniden test edilecek.
 - [ ] Animasyonlar (partikül, konfeti) düşük donanımlı Android'de kare düşürebilir; yedek mod (basit animasyon) şart.
 
 ### Doğrulanmış kurallar
-- `maplibre_gl` `setLayerProperties` null alanları varsayılana sıfırlar → katmanı güncellerken tüm özellikleri birlikte gönder (Adım 0.5).
+- `maplibre_gl` `setLayerProperties` null alanları atlamıyor; animasyonda tek özellik göndermek diğerlerini varsayılana (siyah) sıfırlar, her karede tüm özellikler gönderilmeli. (Adım 0.5)
 
 ---
 
