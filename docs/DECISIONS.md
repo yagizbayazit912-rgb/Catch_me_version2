@@ -40,3 +40,7 @@
 - **Renk:** kendi bölge `AppColors.ownHex` (nane), diğerleri `otherPlayerPalette` (nane hariç). Aynı renge düşen farklı oyuncular olabilir; oyuncu renk seçimi kozmetik adımında.
 - **Önbellek:** hücre başına 60 sn TTL (`GameConfig.ownedCacheTtlSec`), sadece görünür sahipliler çizilir. Gerçek zamanlı güncelleme (başkası claim edince) yok; TTL ile yenilenir.
 - **Yükseklik:** tüm sahipliler `hexExtrusionHeight`; yapı seviyesine göre yükseklik yapılar adımında.
+
+## Sonraya kalanlar (bölüm 19 listesi bitince ele alınacak)
+- **Devralma (PROJE_PLANI 5.3):** Bölüm 19'da hiçbir adıma bağlı değil. `accrue_presence` sahipli bölgede süreyi biriktiriyor ama devralma yapmıyor (`owned_by_other`). Temel mekanik; ayrı adım olarak eklenmeli (yürüyüş modu 1.6'dan sonra test edilebilir). Uyarı ve kayıp bildirimleri de bu kapsamda.
+- **Bölge el değiştirme animasyonu:** Sahip değişince (kaybetme/devralma) renk sessizce güncelleniyor; bölüm 14.1'de tarifi yok. Cila turunda tasarlanacak.
