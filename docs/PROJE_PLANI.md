@@ -356,8 +356,7 @@ seasons          (id, name, starts_at, ends_at)
 - [ ] H3 entegrasyon denemesi (konum → altıgen çizimi)
 
 ### 🟢 Faz 1 — Çekirdek Prototip (2–3 hafta)
-- [ ] Google ile giriş (Adım 0.7, kapalı beta öncesi tamamlanmalı)
-- [ ] Giriş (e-posta / Google / Apple)
+- [ ] Giriş (e-posta / Google / Apple) — Google ile giriş Adım 0.7'de yapılır, kapalı beta öncesi tamamlanmalı
 - [ ] Konum izni akışı ve arka plan konum takibi
 - [ ] Haritada kullanıcının konumu ve altıgenlerin çizimi
 - [ ] `location/ping` servisi, presence birikimi, bölge sahiplenme
