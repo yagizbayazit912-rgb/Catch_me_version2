@@ -41,6 +41,14 @@
 - **Önbellek:** hücre başına 60 sn TTL (`GameConfig.ownedCacheTtlSec`), sadece görünür sahipliler çizilir. Gerçek zamanlı güncelleme (başkası claim edince) yok; TTL ile yenilenir.
 - **Yükseklik:** tüm sahipliler `hexExtrusionHeight`; yapı seviyesine göre yükseklik yapılar adımında.
 
+## Adım 1.5 — Hile kontrolleri
+- **Kapsam:** Basit risk skoru bu adımda: ihlaller `anticheat_events`'e yazılır, `anticheat_strike_window_s` (1 sa) içinde `anticheat_strikes_to_suspend` (3) ihlalde `anticheat_suspend_s` (15 dk) askı; askıdayken tüm ping'ler `suspended` ile reddedilir. Kalıcı ban, itiraz, admin paneli yok (sonra).
+- **İhlal sayılanlar:** `mock_location` (istemci bildirimi), `implausible_accuracy` (<`ping_min_accuracy_m`=1 m; gerçek GPS ~0 bildirmez), `teleport` > `anticheat_strike_speed_mps` (90 m/s). 30–90 m/s ve kötü doğruluk/bayat ping sadece ret, ihlal değil.
+- **Uzun ara:** `ping_teleport_max_gap_s` (30 dk) sonrası hız kontrolü yapılmaz (uçak/tren sonrası kilitlenme olmasın). Bedeli: hileci 30 dk bekleyip sıçrayabilir; mock bildirimi gizleyen (root) istemci için kabul edildi.
+- **Eşikler:** 1.1'deki `CONFIG` bloğu kaldırıldı, hepsi `game_config`'te. Sadece `H3_RESOLUTION` kodda (istemciyle senkron).
+- **Gizlilik:** İhlal kaydında koordinat yok, sadece h3 + hız + doğruluk. Tablolar sadece service_role.
+- iOS mock tespiti (sadece hız/sıçrama) iOS'a geçerken tekrar ele alınacak.
+
 ## Sonraya kalanlar (bölüm 19 listesi bitince ele alınacak)
 - **Devralma (PROJE_PLANI 5.3):** Bölüm 19'da hiçbir adıma bağlı değil. `accrue_presence` sahipli bölgede süreyi biriktiriyor ama devralma yapmıyor (`owned_by_other`). Temel mekanik; ayrı adım olarak eklenmeli (yürüyüş modu 1.6'dan sonra test edilebilir). Uyarı ve kayıp bildirimleri de bu kapsamda.
 - **Bölge el değiştirme animasyonu:** Sahip değişince (kaybetme/devralma) renk sessizce güncelleniyor; bölüm 14.1'de tarifi yok. Cila turunda tasarlanacak.

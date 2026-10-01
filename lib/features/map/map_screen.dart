@@ -365,7 +365,12 @@ class _MapScreenState extends State<MapScreen>
             ' • ${res.speedMps} m/s'
             '${res.countsForPresence == false ? ' • varlık yok' : ''}';
       } else {
-        text = 'Reddedildi: ${res.reason}';
+        final until = res.suspendedUntil;
+        final suffix = until == null
+            ? ''
+            : ' • askı ${until.hour.toString().padLeft(2, '0')}:'
+                  '${until.minute.toString().padLeft(2, '0')} kadar';
+        text = 'Reddedildi: ${res.reasonText}$suffix';
       }
     } catch (e) {
       text = 'Ping hatası: $e';

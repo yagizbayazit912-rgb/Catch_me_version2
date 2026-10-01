@@ -21,6 +21,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 - [ ] Emülatörde konum simülasyonu gerçek GPS gürültüsünü göstermez; hız/doğruluk filtreleri gerçek cihazda ayrıca test edilmeli.
 - [x] ✔ Fill-extrusion + kare başına `setLayerProperties` ile yükseklik animasyonu `maplibre_gl` 0.27.1'de Android'de çalışıyor (Adım 0.5, ~119 güncelleme/sn). Not: Adım 1.4'te animasyon tek hücrelik ayrı katmana alındı (maliyet sahipli sayısından bağımsız olmalı), ama çok sahipli altıgenle cihazda ölçüm **henüz yapılmadı** — çok bölge olunca tekrar bak.
 - [ ] Animasyonlar (partikül, konfeti) düşük donanımlı Android'de kare düşürebilir; yedek mod (basit animasyon) şart.
+- [ ] Hile kontrolünde **ihlal/askı** sadece imkânsız durumlara (mock bildirimi, ~0 m doğruluk, >90 m/s); sınırdaki durumlar (hızlı tren, kötü GPS, uzun aradan sonra yer değişimi) sadece ret veya kontrol dışı. Yanlış askı gerçek oyuncuyu kaçırır (Adım 1.5, cihazda henüz doğrulanmadı).
 
 ### Doğrulanmış kurallar
 - `SUPABASE_URL` sadece proje kökü olmalı (`https://xxx.supabase.co`); `/rest/v1/` eki auth'ta "invalid path" hatası verir. `.env` değişince uygulama tamamen yeniden başlatılmalı (dart-define derlemede gömülür). (Adım 0.6)
@@ -38,6 +39,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 📌 Çıkarılan kural: ...   (yoksa "—")
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
+
+### [2026-10-01] Adım 1.5 — Temel hile kontrolleri
+✅ İyi giden: Mevcut 1.1 filtreleri korundu, eşikleri `game_config`'e taşındı (`ping_guard` RPC tek çağrıda eşik + aktif askı döner, eşik eksikse 500 = kapalı başarısız). Yeni: `anticheat_events` (sadece h3, koordinat yok) + `user_risk`, `record_violation` pencerede 3 ihlalde 15 dk askı. İhlal: mock bildirimi, doğruluk <1 m, >90 m/s; 30–90 m/s sadece ret. Ret edilen ping `accrue_presence`'a hiç ulaşmaz. İstemci çipi Türkçe neden + askı bitiş saati gösteriyor. `flutter analyze` temiz, test geçti.
+❌ Hata / sorun: 1.1'deki gizli hata: teleport reddi son durumu güncellemediği için uçak/tren sonrası yeni şehirde her ping sonsuza dek "teleport" olurdu (askıyla birleşince kalıcı ceza) → son geçerli ping'ten 30 dk sonra hız kontrolü atlanıyor. Dart string'inde iç içe tırnak + `'` analyzer'ı bozdu → ek metin ayrı değişkene alındı. Yerelde Deno yok, fonksiyon cihazda doğrulanacak.
+📌 Çıkarılan kural: "Ret durumu güncellemez" kuralı her zaman bir kaçış yolu (zaman aşımı) ile birlikte yazılır, yoksa kullanıcı kilitlenir.
 
 ### [2026-10-01] Adım 1.4 — Sahipli altıgenlerin renkli/yükseltilmiş çizimi
 ✅ İyi giden: RPC `owned_hexes_in(text[])` (security definer, sadece authenticated; `hexes` kapalı kalır). İstemci görünür alanı (+%15 pay) h3'e çevirip sadece önbellekte olmayan/60 sn'den eski hücreleri sorar; dönen sadece h3 + is_mine + color_seed (owner_id/koordinat yok). Sahipliler tek fill-extrusion katmanında, renk veriden (`['get','color']`): kendi = `AppColors.ownHex`, diğerleri `otherPlayerPalette[seed % n]`. Yükselme animasyonu ayrı tek-hücreli katmanda → kare başı `setLayerProperties` maliyeti sahipli sayısından bağımsız. Claim'de `res.h3` önbelleğe eklenir. `flutter analyze` temiz, test geçti.
