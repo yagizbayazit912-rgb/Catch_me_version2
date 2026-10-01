@@ -39,6 +39,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 1.3 — Sahiplenme animasyonu, haptik, ses
+✅ İyi giden: `ClaimCelebration` (ripple halkaları, parıltılar, "+1 Bölge" süzülür) + `playClaimFeedback` (orta haptik + sistem sesi) ayrı dosyada. Tetik sunucudan: `PingResult.claimed` (`presence.status == 'claimed'`). Süre/parçacık sayısı/ses-titreşim bayrağı `GameConfig`'te. Sadece etiket dokunma yakalar (dokununca atlanır), harita çalışmaya devam eder; "hareketi azalt" → animasyonsuz kısa bildirim. Yeni paket yok. `flutter analyze` temiz, test geçti.
+❌ Hata / sorun: Cihazda henüz doğrulanmadı (geçici "Claim animasyonu dene" çipiyle oynatılır). Ses şimdilik `SystemSound.click`; gerçek "ding" için ses paketi + asset sonraya. Komşu altıgen ripple'ı overlay halkasıyla yaklaşıldı (gerçek komşu dalgalanması 1.4'te sahipli çizimle).
+📌 Çıkarılan kural: —
+
 ### [2026-10-01] Adım 1.2 — Presence birikimi ve sahiplenme
 ✅ İyi giden: Migration `20261001020000_presence_claim.sql`: `game_config` (claim_seconds=600, pencere 24 sa, ping başına tavan 60 sn, sahiplik limiti 5), `hexes`, `hex_progress`, hepsi RLS + revoke (sadece service_role). Birikim ve claim tek atomik SQL fonksiyonunda (`accrue_presence`, sadece service_role çağırır); `location-ping` her kabul edilen ping'te çağırıyor. Süre = aynı altıgendeki ardışık ping farkı (altıgen değişimi/ilk ping 0 sn, araç hızında sayılmaz).
 ❌ Hata / sorun: Yerelde CLI/Deno yok → yerelde test edilemedi. ✅ Kullanıcı cihazda doğruladı (claim_seconds=30 ile test, bölge `hexes`'e kullanıcıya yazıldı, sonra 600'e geri alındı). Not: uygulama `--dart-define-from-file=.env` olmadan açılınca "Supabase ayarı bulunamadı" gösterir; panelde "Failed to fetch" geçici bağlantı sorunuydu. Sahipli (başkasının) bölgede meydan okuma henüz yok, sadece birikim sürüyor.

@@ -29,3 +29,8 @@
 - **Filtreler:** doğruluk >50 m ret; hesaplanan hız >30 m/s ret ("teleport"); istemci `isMocked` bildirirse ret; istemci zamanı 120 sn'den eskiyse ret. Hız sunucuda son geçerli ping'den hesaplanır (istemci hızına güvenilmez); mesafeden iki doğruluk değeri düşülür. Hız >25 km/s ise ping kabul edilir ama `counts_for_presence=false` (1.2 kullanacak).
 - **ping_state:** son geçerli ping tek satır/kullanıcı; istemci erişimi yok (RLS politikasız + revoke). Ham koordinat kimseye dönmez, cevap sadece çağıranın kendi h3'ünü içerir.
 - **Test çipi:** haritadaki "Ping gönder" geçici; Adım 1.6'da yürüyüş modu ping'i otomatik atınca kalkacak. Mock tespiti şimdilik istemci bildirimine bağlı, sunucu tarafı risk skoru Adım 1.5.
+
+## Adım 1.3 — Claim animasyonu
+- **Ses:** Şimdilik `SystemSound.click` (paket/asset yok). Yumuşak "ding" asseti ve ses paketi, ayarlar ekranı (ses/titreşim anahtarı) gelince eklenecek; o zamana kadar `GameConfig.soundEnabled/hapticsEnabled` sabit.
+- **Overlay:** Kutlama ekran-merkezli Flutter overlay'i (harita native katman olduğu için dünya koordinatına bağlanmaz). Düşük donanım tespiti yok; `lite` bayrağı hazır, tespit sonra bağlanacak.
+- **Test çipi:** "Claim animasyonu dene" geçici; Adım 1.6'da ping çipiyle birlikte kalkacak.

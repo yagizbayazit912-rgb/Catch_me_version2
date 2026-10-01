@@ -8,6 +8,7 @@ import '../../core/hex/hex_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/ping_repository.dart';
+import 'claim_celebration.dart';
 
 /// Ana harita ekranı: pastel MapLibre stili + ön plan konum izni.
 class MapScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _MapScreenState extends State<MapScreen>
   final _myCell = HexService(ringSize: 0);
   final _ping = PingRepository();
   String? _pingText;
+  bool _celebrating = false;
   late final AnimationController _rise = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: GameConfig.hexRiseMs),
@@ -115,6 +117,17 @@ class _MapScreenState extends State<MapScreen>
             _riseUpdates * 1000 / sw.elapsedMilliseconds.clamp(1, 1 << 30),
       );
     }
+  }
+
+  /// Adım 1.3: claim anı. Haptik + ses, blok yükselmesi ve kutlama overlay'i.
+  /// Hiçbiri UI'yı beklemez; tekrar tetiklenirse kutlama baştan başlar.
+  void _celebrateClaim() {
+    playClaimFeedback();
+    _playRise();
+    setState(() => _celebrating = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _celebrating = true);
+    });
   }
 
   /// Sadece ön plan izni ister (arka plan konumu bu adımda yok).
@@ -209,9 +222,11 @@ class _MapScreenState extends State<MapScreen>
       final pos = await Geolocator.getCurrentPosition();
       final res = await _ping.send(pos);
       if (res.ok) {
+        if (res.claimed) _celebrateClaim();
         final local = _myCell.cellAt(pos.latitude, pos.longitude);
         final match = res.h3 == local ? '✓ eşleşti' : '✗ FARKLI ($local)';
-        text = 'Ping ok • ${res.h3} $match'
+        text =
+            'Ping ok • ${res.h3} $match'
             ' • ${res.speedMps} m/s'
             '${res.countsForPresence == false ? ' • varlık yok' : ''}';
       } else {
@@ -256,6 +271,15 @@ class _MapScreenState extends State<MapScreen>
                 label: Text(_pingText ?? 'Ping gönder'),
                 onPressed: _sendPing,
               ),
+              ActionChip(
+                backgroundColor: AppColors.surface,
+                avatar: const Icon(
+                  Icons.celebration_rounded,
+                  color: AppColors.text,
+                ),
+                label: const Text('Claim animasyonu dene'),
+                onPressed: _celebrateClaim,
+              ),
             ],
           ),
         ),
@@ -294,6 +318,11 @@ class _MapScreenState extends State<MapScreen>
           else
             const Center(child: CircularProgressIndicator()),
           if (ready) _riseTestChip(),
+          if (_celebrating)
+            ClaimCelebration(
+              reduceMotion: MediaQuery.of(context).disableAnimations,
+              onDone: () => setState(() => _celebrating = false),
+            ),
           if (widget.onSignOut != null)
             SafeArea(
               child: Align(

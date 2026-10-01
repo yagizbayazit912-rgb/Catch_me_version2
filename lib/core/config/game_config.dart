@@ -15,4 +15,16 @@ abstract final class GameConfig {
 
   /// Yükselme animasyonu süresi (ms).
   static const hexRiseMs = 1600;
+
+  /// Adım 1.3: claim kutlaması toplam süresi (ms) ve ripple halka sayısı.
+  static const claimCelebrationMs = 1400;
+  static const claimRippleRings = 2;
+
+  /// Parıltı sayısı; düşük donanım yedek modunda azı kullanılır.
+  static const claimSparkles = 14;
+  static const claimSparklesLite = 5;
+
+  /// Ayarlar ekranı gelene kadar sabit: ses / titreşim açık mı.
+  static const hapticsEnabled = true;
+  static const soundEnabled = true;
 }

@@ -9,6 +9,7 @@ class PingResult {
     this.reason,
     this.speedMps,
     this.countsForPresence,
+    this.presenceStatus,
   });
 
   final bool ok;
@@ -17,12 +18,18 @@ class PingResult {
   final double? speedMps;
   final bool? countsForPresence;
 
+  /// Sunucunun presence kararı: accruing / claimed / owned / owned_by_other.
+  final String? presenceStatus;
+
+  bool get claimed => presenceStatus == 'claimed';
+
   factory PingResult.fromJson(Map<String, dynamic> j) => PingResult(
     ok: j['ok'] == true,
     h3: j['h3'] as String?,
     reason: j['reason'] as String?,
     speedMps: (j['speed_mps'] as num?)?.toDouble(),
     countsForPresence: j['counts_for_presence'] as bool?,
+    presenceStatus: (j['presence'] as Map?)?['status'] as String?,
   );
 }
 
