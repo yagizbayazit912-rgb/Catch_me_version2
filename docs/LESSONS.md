@@ -41,7 +41,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-01] Adım 1.1 — location/ping servisi
 ✅ İyi giden: Edge Function `location-ping` (tek dosya, h3-js ile sunucuda h3 hesabı; doğruluk >50 m, ışınlanma >30 m/s, mock bildirimi, bayat ping reddi; >25 km/s kabul ama varlık sayılmaz). `ping_state` tablosu RLS + revoke (politikasız, sadece service_role). İstemci `PingRepository` + haritada geçici "Ping gönder" çipi (sunucu h3 ↔ yerel h3). `flutter analyze` temiz.
-❌ Hata / sorun: Yerelde Supabase CLI/Deno yok → fonksiyon çalıştırılıp test edilemedi; sadece analyze ile doğrulandı. Cihazda/Supabase'de doğrulama kullanıcıda bekliyor.
+❌ Hata / sorun: Yerelde Supabase CLI/Deno yok → fonksiyon çalıştırılıp test edilemedi; sadece analyze ile doğrulandı. Kullanıcı cihazda doğruladı: migration + deploy sonrası ping ok, sunucu h3 (892d114a543ffff) yerel hesapla eşleşti. Not: Dashboard editörüne dosya adı değil içerik yapıştırılır; fonksiyon adı tam `location-ping` olmalı.
 📌 Çıkarılan kural: Reddedilen ping son durumu güncellemez; hız hesabında iki ölçümün doğruluğu mesafeden düşülür (GPS gürültüsü sahte ışınlanma üretmesin).
 
 ### [2026-10-01] Adım 0.7 — Google ile giriş
