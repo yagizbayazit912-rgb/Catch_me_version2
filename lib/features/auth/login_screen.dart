@@ -70,6 +70,26 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> _google() async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    String? message;
+    try {
+      await widget.repo.signInWithGoogle();
+    } on AuthException catch (e) {
+      message = e.message;
+    } catch (_) {
+      message = 'Google ile bağlanılamadı. İnternetini kontrol et.';
+    }
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _message = message;
+    });
+  }
+
   void _toggleMode() => setState(() {
     _isSignUp = !_isSignUp;
     _message = null;
@@ -160,6 +180,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             )
                           : Text(_isSignUp ? 'Kayıt ol' : 'Giriş yap'),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _google,
+                      icon: const Icon(Icons.login),
+                      label: const Text('Google ile devam et'),
                     ),
                     TextButton(
                       onPressed: _busy ? null : _toggleMode,

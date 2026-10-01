@@ -39,6 +39,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-01] Adım 0.7 — Google ile giriş
+✅ İyi giden: `google_sign_in` 7.x yerel akış (`authenticate()` → ID token → Supabase `signInWithIdToken`); tarayıcı yönlendirmesi yok. Giriş ekranına "Google ile devam et" eklendi, `GOOGLE_WEB_CLIENT_ID` `.env`'den okunuyor (secret repoda/istemcide yok). `flutter analyze` temiz. Kullanıcı cihazda doğruladı: Google girişi + e-posta girişi çalışıyor.
+❌ Hata / sorun: Supabase "Client IDs" alanına istemci adı (`catch-me`) yazılmıştı → Web client ID (`...apps.googleusercontent.com`) olmalı. Test users listesinde olmayan hesap da girebildi (sebep kesinleşmedi: proje üyesi ya da temel kapsamda kısıt uygulanmıyor olabilir).
+📌 Çıkarılan kural: Supabase Google sağlayıcısına **Web** client ID + secret girilir ("Skip nonce checks" açık); Android client sadece paket adı + SHA-1 kaydı içindir. Test users listesi erişim kontrolü sayılmaz; erişim kısıtı sunucuda. Release için ayrı SHA-1 ve Google uygulama yayını/doğrulaması gerekecek.
+
 ### [2026-10-01] Adım 0.6 — Supabase + auth + users + RLS
 ✅ İyi giden: `supabase_flutter` 2.18 eklendi; URL/anahtar `--dart-define-from-file=.env` ile (asset'e gömülmez, `.env` gitignore'da, `git check-ignore` ile doğrulandı). `users` tablosu + kayıt tetikleyicisi + RLS migration'ı ve SQL Editor'de çalışan, kendini geri alan RLS testi (`supabase/tests/rls_users.sql`) yazıldı. `flutter analyze` temiz, mevcut test geçti.
 ❌ Hata / sorun: Supabase yeni tablolarda anon/authenticated'a varsayılan TÜM yetkileri verir → sadece RLS'e güvenmek yerine `revoke all` + kolon bazlı `grant update(username)`. `anonKey` deprecated → `publishableKey`. Bash heredoc'u Türkçe kesme işaretli Dart kodunda bozuldu → Write aracı kullanıldı. Kayıtta "invalid path specified in request url" → `.env`'de URL Data API sayfasından `/rest/v1/` ekiyle kopyalanmıştı (+ şablon satırı silinmemişti) → kök URL'ye düzeltilince çözüldü.
