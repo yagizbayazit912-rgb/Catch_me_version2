@@ -42,16 +42,19 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ✅ İyi giden: MapLibre + yerel pastel stil JSON (OpenFreeMap kaynağı, anahtar yok); izin akışı (verildi / reddedildi / kalıcı red / servis kapalı) tek kartta. `flutter analyze` temiz, `flutter build apk --debug` başarılı.
 ❌ Hata / sorun: Emülatör "offline" çıktı → haritanın gerçekten açıldığı ve mavi konum noktasının göründüğü **cihazda doğrulanmadı**; yalnızca derleme doğrulandı. Platform view yüzünden MapScreen widget testi yazılmadı (test tema ekranına bağlandı). Gradle Kotlin artımlı önbellek uyarıları (proje D:, pub cache C:) zararsız görünüyor.
 📌 Çıkarılan kural: Harita/konum adımları cihazda elle doğrulanmadan "çalışıyor" sayılmaz.
+✔ Sonradan doğrulandı (kullanıcı, cihazda): harita açılıyor, konum izni ve konum görünümü çalışıyor.
 
 ### [2026-10-01] Adım 0.2 — Pastel tema
 ✅ İyi giden: Nunito (variable TTF, OFL) `assets/fonts/` altına paketlendi → çevrimdışı çalışır, ağ bağımlılığı yok. `AppColors`/`AppTheme` `core/theme` altında; `flutter analyze` temiz, widget testi geçti.
 ❌ Hata / sorun: 0.1'in testi harita metnini arıyordu, ana ekran değişince kırıldı → test güncellendi. Cihazda görsel kontrol yapılmadı; variable font ağırlıklarının (w800/w900) Android'de doğru render olduğu doğrulanmadı.
 📌 Çıkarılan kural: Ana ekran (home) değişince `test/widget_test.dart` da güncellenmeli.
+✔ Sonradan doğrulandı (kullanıcı, cihazda): tema ekranı, renkler, Nunito ve butonlar doğru görünüyor.
 
 ### [2026-10-01] Adım 0.1 — Flutter iskeleti
 ✅ İyi giden: `flutter create --project-name catch_me --platforms android .` mevcut klasörde sorunsuz çalıştı; `flutter analyze` temiz, widget testi geçti.
 ❌ Hata / sorun: Android cihaz/emülatörde açılış denenmedi (yalnızca analyze + widget testi).
 📌 Çıkarılan kural: Klasör adı geçersiz paket adıysa `--project-name` ile ver.
+✔ Sonradan doğrulandı (kullanıcı, cihazda): uygulama Android'de açılıyor.
 
 ### [Proje başlangıcı]
 ✅ İyi giden: Plan ve kararlar yazıldı (Catch Me, Res 9, Android önce, 13+).
