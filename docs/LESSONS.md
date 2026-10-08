@@ -40,6 +40,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-09] Adım 2.1 — Altın bakiyesi + transactions
+✅ İyi giden: Migration `20261009000000_transactions.sql`: `transactions` (user, type, amount işaretli, currency coins|gems, balance_after, ref_id) + RLS (sadece kendi satırını okur, yazma yok). Tek giriş noktası `apply_transaction` (security definer, sadece service_role): kullanıcı satırını kilitler, bakiye+kayıt aynı işlemde, yetersiz bakiyede `insufficient_funds` (negatif bakiye yok). `users.coins/gems` 0.6'dan zaten vardı. SQL Editor testi `supabase/tests/transactions.sql` (kazanç/harcama/yetersiz/tutarlılık/RLS/anon/fonksiyon çağıramama). İstemci: `WalletRepository` + haritada salt okunur altın sayacı (sol üst). `flutter analyze` temiz, test geçti.
+❌ Hata / sorun: Migration ve SQL testi Supabase'de **henüz çalıştırılmadı**; yerelde Postgres yok. Altın kazandıran/harcatan bir özellik henüz yok (2.2+), bu yüzden sayaç şimdilik 0.
+📌 Çıkarılan kural: —
+
 ### [2026-10-09] Adım 1.6 — Yürüyüş modu
 ✅ İyi giden: `WalkController` (ayrı dosya) geolocator'ın `getPositionStream` + `foregroundNotificationConfig` ile foreground service ve "Catch Me aktif" bildirimini açar; her 15 sn'de bir mevcut `location-ping`'e yollar (yeni sunucu kodu yok). >25 km/s (2 ardışık okuma) → ping atmadan duraklar, 2 yavaş okumada devam. Bildirim izni için `permission_handler`. Eşikler/metinler `GameConfig`'te. Geçici "Ping gönder" ve "Claim animasyonu dene" çipleri kalktı; claim kutlaması artık yürüyüş ping'inden tetiklenir. `flutter analyze` temiz, test geçti.
 ❌ Hata / sorun: Durdurunca bildirim gitmedi. Sebep: `enableWakeLock: true` ama manifest'te `WAKE_LOCK` izni yoktu → eklenti `SecurityException` ("Failed to open event stream") ile akışı düzgün açamadı, servis kapanmadı. `WAKE_LOCK` eklenince çözüldü (cihazda doğrulandı: başlat/durdur, bildirim gidiyor). Ekran kapalı 10 dk yürüyüş testi **henüz yapılmadı**. Android 13+ bildirim izni reddedilirse bildirim görünmeyebilir (durum satırı uyarır).

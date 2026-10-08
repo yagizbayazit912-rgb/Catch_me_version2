@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/hex_repository.dart';
 import '../../data/ping_repository.dart';
+import '../../data/wallet_repository.dart';
 import 'claim_celebration.dart';
 import 'walk_controller.dart';
 
@@ -45,6 +46,8 @@ class _MapScreenState extends State<MapScreen>
   final _myCell = HexService(ringSize: 0);
   final _ping = PingRepository();
   final _hexRepo = HexRepository();
+  final _wallet = WalletRepository();
+  Wallet? _balance;
 
   /// Sahiplik önbelleği: sorulan her hücrenin zamanı, sahipliler ayrı.
   final _owned = <String, OwnedHex>{};
@@ -78,6 +81,15 @@ class _MapScreenState extends State<MapScreen>
       if (mounted) setState(() => _style = s);
     });
     _resolveLocation();
+    _loadBalance();
+  }
+
+  /// Bakiyeyi sunucudan okur; hata olursa sayaç gizli kalır.
+  Future<void> _loadBalance() async {
+    try {
+      final w = await _wallet.load();
+      if (mounted) setState(() => _balance = w);
+    } catch (_) {}
   }
 
   @override
@@ -476,6 +488,23 @@ class _MapScreenState extends State<MapScreen>
             const Center(child: CircularProgressIndicator()),
           if (ready) _riseTestChip(),
           if (ready) _walkPanel(),
+          if (_balance != null)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Chip(
+                    backgroundColor: AppColors.surface,
+                    avatar: const Icon(
+                      Icons.monetization_on_rounded,
+                      color: AppColors.text,
+                    ),
+                    label: Text('${_balance!.coins}'),
+                  ),
+                ),
+              ),
+            ),
           if (_celebrating)
             ClaimCelebration(
               reduceMotion: MediaQuery.of(context).disableAnimations,
