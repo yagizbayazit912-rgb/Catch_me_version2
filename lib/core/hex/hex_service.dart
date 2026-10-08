@@ -48,6 +48,18 @@ class HexService {
       c.toRadixString(16),
   ];
 
+  /// Hücre merkezi [lng, lat].
+  List<double> center(String h3) {
+    final c = _h3.cellToLatLng(BigInt.parse(h3, radix: 16));
+    return [c.lng, c.lat];
+  }
+
+  /// Hücre köşeleri [[lng, lat], ...] (kapanmamış halka).
+  List<List<double>> boundary(String h3) => [
+    for (final p in _h3.cellToBoundary(BigInt.parse(h3, radix: 16)))
+      [p.lng, p.lat],
+  ];
+
   /// Tek hücrenin GeoJSON Feature'ı; [props] çizim için ek alanlar.
   Map<String, dynamic> feature(String h3, [Map<String, dynamic>? props]) {
     final ring = [

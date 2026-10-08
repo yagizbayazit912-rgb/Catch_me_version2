@@ -29,7 +29,8 @@ class WalkController extends ChangeNotifier {
   int _slowStreak = 0;
 
   WalkState get state => _state;
-  bool get running => _state == WalkState.active || _state == WalkState.pausedFast;
+  bool get running =>
+      _state == WalkState.active || _state == WalkState.pausedFast;
 
   /// Oyuncuya gösterilecek kısa durum satırı.
   String? get status => _status;

@@ -70,3 +70,10 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Devralma (PROJE_PLANI 5.3):** *(Çözüm yönü: skorlu meydan okuma, yukarıdaki "Mini oyun ve seviye sistemi", PROJE_PLANI M.4.)* Bölüm 19'da hiçbir adıma bağlı değil. `accrue_presence` sahipli bölgede süreyi biriktiriyor ama devralma yapmıyor (`owned_by_other`). Temel mekanik; ayrı adım olarak eklenmeli (yürüyüş modu 1.6'dan sonra test edilebilir). Uyarı ve kayıp bildirimleri de bu kapsamda.
 - **Bölge el değiştirme animasyonu:** Sahip değişince (kaybetme/devralma) renk sessizce güncelleniyor; bölüm 14.1'de tarifi yok. Cila turunda tasarlanacak.
 - **Yürüyüşü otomatik başlatma (ayar):** Uygulama ön plana gelince yürüyüş modu kendiliğinden başlayabilir, ama **varsayılan kapalı bir ayar**; ilk açılışta açık rıza ekranında (PROJE_PLANI bölüm 8) oyuncuya sorulur. Düğme kalır (elle başlat/durdur). Android foreground service'i arka plandayken başlatamaz, bu yüzden "otomatik" = uygulama açılınca. Rıza ekranı adımıyla birlikte yapılacak; o zamana kadar sadece düğme (1.6).
+
+## Adım 2.2 (çadır)
+- **Uzaktan inşa serbest:** Oyuncu kendi hücresine o hücrede durmadan da çadır kurabilir (haritada hücreye dokun → kart). Plan aksini söylemiyor; konum şartı gerekirse `build_structure`'a eklenir.
+- **Yapı = `hexes.level`** (ayrı `structures` tablosu yok, plan 2.2 böyle diyor). Tip seviyeden türer: 1 çadır, 2 ev, 3 otel, 4 gökdelen.
+- **Çadır görseli 3D geometri** (fill-extrusion parçaları), sprite değil: bloğun üstüne oturur ve zoom'la ölçeklenir. Ölçü/renk oranları `GameConfig`'te.
+- **Test altını:** Altın kazanma yolu (2.3 gelir) gelene kadar `supabase/tests/grant_test_coins.sql` ile elle verilir (`dev_grant` kaydı). İstemciye altın üreten RPC açılmadı.
+- **Blok yüksekliği** şimdilik seviyeden bağımsız (40 m); plan 14.1-A "seviyeyle artar" diyor, 2.4'te ele alınacak.

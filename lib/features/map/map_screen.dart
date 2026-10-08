@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:geolocator/geolocator.dart';
@@ -10,7 +14,9 @@ import '../../core/theme/app_theme.dart';
 import '../../data/hex_repository.dart';
 import '../../data/ping_repository.dart';
 import '../../data/wallet_repository.dart';
+import 'build_celebration.dart';
 import 'claim_celebration.dart';
+import 'tent_model.dart';
 import 'walk_controller.dart';
 
 /// Ana harita ekranı: pastel MapLibre stili + ön plan konum izni.
@@ -26,8 +32,7 @@ class MapScreen extends StatefulWidget {
 
 enum _LocState { loading, ready, denied, deniedForever, serviceOff }
 
-class _MapScreenState extends State<MapScreen>
-    with SingleTickerProviderStateMixin {
+class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   static const _styleAsset = 'assets/map/pastel_style.json';
   static const _defaultZoom = 16.0;
 
@@ -41,8 +46,32 @@ class _MapScreenState extends State<MapScreen>
   // böylece kare başı güncelleme sahipli altıgen sayısından bağımsızdır.
   static const _hex3dSource = 'hex3d-src';
   static const _hex3dLayer = 'hex3d-layer';
+  // Adım 2.2: yapılar. Gölge (yarı saydam), sabit çadırlar ve sadece inşa
+  // edilen çadırın animasyon katmanı (kare başı maliyet tek çadırlık).
+  static const _shadowSource = 'shadow-src';
+  static const _shadowLayer = 'shadow-layer';
+  static const _tentSource = 'tent-src';
+  static const _tentLayer = 'tent-layer';
+  static const _buildSource = 'build-src';
+  static const _buildLayer = 'build-layer';
 
   final _hex = HexService();
+  late final _tent = TentModel(_hex);
+
+  /// Dokunulan kendi hücrem (inşa kartı açık).
+  String? _selected;
+  bool _buildBusy = false;
+  String? _buildError;
+
+  /// Animasyonu oynayan çadırın hücresi; sabit katmanda çizilmez.
+  String? _buildingCell;
+  (Offset ground, Offset top)? _buildAnchor;
+  List<DustPuff> _puffs = const [];
+  late final AnimationController _buildAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: GameConfig.buildAnimMs),
+  )..addListener(_onBuildTick);
+  bool _buildTickBusy = false;
   final _myCell = HexService(ringSize: 0);
   final _ping = PingRepository();
   final _hexRepo = HexRepository();
@@ -96,6 +125,7 @@ class _MapScreenState extends State<MapScreen>
   void dispose() {
     _walk.dispose();
     _rise.dispose();
+    _buildAnim.dispose();
     super.dispose();
   }
 
@@ -116,6 +146,224 @@ class _MapScreenState extends State<MapScreen>
       // Stil yeniden yüklenirken katman yoksa sessizce geç.
     } finally {
       _riseBusy = false;
+    }
+  }
+
+  /// Çadır katmanı özellikleri. Parçaların `b`/`h` değerleri blok tepesine
+  /// göredir; [scale] dikey ölçek (squash & stretch). Tüm alanlar birlikte
+  /// gönderilir (Altın Kural: null alan varsayılana sıfırlanır).
+  FillExtrusionLayerProperties _tentProps(double scale) =>
+      FillExtrusionLayerProperties(
+        fillExtrusionColor: [Expressions.get, 'color'],
+        fillExtrusionOpacity: 1.0,
+        fillExtrusionBase: [
+          '+',
+          GameConfig.hexExtrusionHeight,
+          [
+            '*',
+            ['get', 'b'],
+            scale,
+          ],
+        ],
+        fillExtrusionHeight: [
+          '+',
+          GameConfig.hexExtrusionHeight,
+          [
+            '*',
+            ['get', 'h'],
+            scale,
+          ],
+        ],
+        fillExtrusionVerticalGradient: true,
+      );
+
+  FillExtrusionLayerProperties get _shadowProps => FillExtrusionLayerProperties(
+    fillExtrusionColor: [Expressions.get, 'color'],
+    fillExtrusionOpacity: GameConfig.tentShadowOpacity,
+    fillExtrusionBase: [
+      '+',
+      GameConfig.hexExtrusionHeight,
+      ['get', 'b'],
+    ],
+    fillExtrusionHeight: [
+      '+',
+      GameConfig.hexExtrusionHeight,
+      ['get', 'h'],
+    ],
+    fillExtrusionVerticalGradient: false,
+  );
+
+  /// Squash & stretch eğrisi (plan 14.1-C: 0 → %110 → %100). İlk %15'te
+  /// çadır yok (zeminde işaret + toz), sonra zıplayarak belirir.
+  static double _tentScale(double t) {
+    final p = ((t - 0.15) / 0.85).clamp(0.0, 1.0);
+    const up = GameConfig.buildStretch;
+    const down = GameConfig.buildSquash;
+    if (p < 0.45) return up * Curves.easeOutCubic.transform(p / 0.45);
+    if (p < 0.7) {
+      return up + (down - up) * Curves.easeInOut.transform((p - 0.45) / 0.25);
+    }
+    return down + (1 - down) * Curves.easeOut.transform((p - 0.7) / 0.3);
+  }
+
+  Future<void> _onBuildTick() async {
+    final map = _map;
+    if (map == null || _buildTickBusy) return;
+    _buildTickBusy = true;
+    try {
+      await map.setLayerProperties(
+        _buildLayer,
+        _tentProps(_tentScale(_buildAnim.value)),
+      );
+    } catch (_) {
+      // Stil yeniden yüklenirken katman yoksa sessizce geç.
+    } finally {
+      _buildTickBusy = false;
+    }
+  }
+
+  /// Haritaya dokunma: dokunulan 3D bloğu/çadırı bulur (eğik kamerada zemin
+  /// noktası komşu hücreye düşebilir), yoksa zemin noktasının hücresi.
+  /// Kendi hücremse inşa kartı açılır.
+  Future<void> _onMapTap(math.Point<double> pt, LatLng ll) async {
+    String? cell;
+    final map = _map;
+    if (map != null && _hexDrawn) {
+      try {
+        final hits = await map.queryRenderedFeatures(pt, [
+          _buildLayer,
+          _tentLayer,
+          _hex3dLayer,
+          _ownedLayer,
+        ], null);
+        for (final f in hits) {
+          final m = f is String ? jsonDecode(f) : f;
+          final h = (m as Map)['properties']?['h3'];
+          if (h is String) {
+            cell = h;
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+    cell ??= _myCell.cellAt(ll.latitude, ll.longitude);
+    final o = _owned[cell];
+    if (!mounted) return;
+    setState(() {
+      _selected = (o != null && o.isMine) ? cell : null;
+      _buildError = null;
+    });
+  }
+
+  /// Sunucuya inşa isteği; kabul edilirse bakiye güncellenir ve animasyon
+  /// oynar. Ret nedeni kartta gösterilir.
+  Future<void> _buildTent(String cell) async {
+    if (_buildBusy || _buildingCell != null) return;
+    setState(() {
+      _buildBusy = true;
+      _buildError = null;
+    });
+    try {
+      final coins = await _hexRepo.buildTent(cell);
+      final prev = _owned[cell];
+      if (prev != null) _owned[cell] = prev.withLevel(1);
+      if (!mounted) return;
+      setState(() {
+        _buildBusy = false;
+        _selected = null;
+        _balance = Wallet(coins: coins, gems: _balance?.gems ?? 0);
+      });
+      _playBuild(cell);
+    } on BuildException catch (e) {
+      if (e.code == 'already_built' || e.code == 'not_owner') {
+        _fetchedAt.remove(cell);
+        _refreshOwned();
+      }
+      if (e.code == 'insufficient_funds') _loadBalance();
+      if (mounted) {
+        setState(() {
+          _buildBusy = false;
+          _buildError = e.message;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _buildBusy = false;
+          _buildError = 'Bağlantı yok, tekrar dene';
+        });
+      }
+    }
+  }
+
+  /// İnşa anı: kamera çadıra odaklanır, haptik + ses, çadır ayrı katmanda
+  /// zıplar, ekranda toz/parıltı/"-100". "Hareketi azalt" açıksa çadır
+  /// doğrudan son halinde belirir. Animasyon UI'yı bloklamaz, atlanabilir.
+  Future<void> _playBuild(String cell) async {
+    final map = _map;
+    if (map == null || !_hexDrawn) return;
+    final reduce = MediaQuery.of(context).disableAnimations;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final c = _hex.center(cell);
+    final target = LatLng(c[1], c[0]);
+    playClaimFeedback();
+
+    if (reduce) {
+      await _renderOwned();
+      return;
+    }
+
+    _buildingCell = cell;
+    try {
+      await map.animateCamera(
+        CameraUpdate.newLatLngZoom(target, GameConfig.buildFocusZoom),
+        duration: const Duration(milliseconds: GameConfig.buildFocusMs),
+      );
+      _buildAnim.value = 0;
+      await map.setLayerProperties(_buildLayer, _tentProps(0));
+      final o = _owned[cell];
+      await map.setGeoJsonSource(
+        _buildSource,
+        HexService.collection(
+          _tent.parts(cell, o == null ? AppColors.ownHex : _ownedColor(o)),
+        ),
+      );
+      await _renderOwned();
+
+      // Efektlerin ekran konumu: zemin noktası + blok/çadır yüksekliğinin
+      // eğik kameradaki izdüşümü. Android piksel döner → mantıksal piksele.
+      final p = await map.toScreenLocation(target);
+      final s = Platform.isAndroid ? dpr : 1.0;
+      final cam = map.cameraPosition;
+      final zoom = cam?.zoom ?? GameConfig.buildFocusZoom;
+      final tilt = (cam?.tilt ?? GameConfig.mapTilt) * math.pi / 180;
+      final mpp =
+          40075016.686 *
+          math.cos(c[1] * math.pi / 180) /
+          (512 * math.pow(2, zoom));
+      final up = math.sin(tilt) / mpp;
+      final base = Offset(p.x / s, p.y / s);
+      final tentTop =
+          GameConfig.hexExtrusionHeight +
+          GameConfig.tentHeight * _tent.radius(cell);
+      if (!mounted) return;
+      setState(() {
+        _puffs = BuildCelebration.makePuffs();
+        _buildAnchor = (
+          base - Offset(0, GameConfig.hexExtrusionHeight * up),
+          base - Offset(0, tentTop * up),
+        );
+      });
+      await _buildAnim.forward(from: 0).orCancel.catchError((_) {});
+    } catch (_) {
+      // Harita/katman hatası: çadır yine sabit katmanda görünür.
+    } finally {
+      _buildingCell = null;
+      if (mounted) setState(() => _buildAnchor = null);
+      try {
+        await _renderOwned();
+        await map.setGeoJsonSource(_buildSource, HexService.collection([]));
+      } catch (_) {}
     }
   }
 
@@ -269,6 +517,28 @@ class _MapScreenState extends State<MapScreen>
             Curves.elasticOut.transform(_rise.value),
       ),
     );
+    final empty = HexService.collection([]);
+    await map.addGeoJsonSource(_shadowSource, empty);
+    await map.addFillExtrusionLayer(
+      _shadowSource,
+      _shadowLayer,
+      _shadowProps,
+      minzoom: GameConfig.structureMinZoom,
+    );
+    await map.addGeoJsonSource(_tentSource, empty);
+    await map.addFillExtrusionLayer(
+      _tentSource,
+      _tentLayer,
+      _tentProps(1),
+      minzoom: GameConfig.structureMinZoom,
+    );
+    await map.addGeoJsonSource(_buildSource, empty);
+    await map.addFillExtrusionLayer(
+      _buildSource,
+      _buildLayer,
+      _tentProps(_tentScale(_buildAnim.value)),
+      minzoom: GameConfig.structureMinZoom,
+    );
     _refreshOwned();
   }
 
@@ -289,6 +559,17 @@ class _MapScreenState extends State<MapScreen>
     final map = _map;
     if (map == null || !_hexDrawn) return;
     await map.setGeoJsonSource(_ownedSource, _ownedCollection());
+    final shadows = <Map<String, dynamic>>[];
+    final tents = <Map<String, dynamic>>[];
+    for (final h in _owned.values) {
+      if (h.level < 1 || !_visible.contains(h.h3)) continue;
+      shadows.add(_tent.shadow(h.h3));
+      if (h.h3 != _buildingCell) {
+        tents.addAll(_tent.parts(h.h3, _ownedColor(h)));
+      }
+    }
+    await map.setGeoJsonSource(_shadowSource, HexService.collection(shadows));
+    await map.setGeoJsonSource(_tentSource, HexService.collection(tents));
   }
 
   /// Kamera durunca: görünür hücreleri hesapla, önbellekte olmayan veya
@@ -375,7 +656,11 @@ class _MapScreenState extends State<MapScreen>
     final s = _walk.state;
     final (label, icon, color) = switch (s) {
       WalkState.off => ('Yürüyüşe başla', Icons.directions_walk_rounded, null),
-      WalkState.starting => ('Başlatılıyor…', Icons.hourglass_top_rounded, null),
+      WalkState.starting => (
+        'Başlatılıyor…',
+        Icons.hourglass_top_rounded,
+        null,
+      ),
       WalkState.active => (
         'Yürüyüş açık • durdur',
         Icons.stop_circle_rounded,
@@ -416,6 +701,90 @@ class _MapScreenState extends State<MapScreen>
                     : (_walk.running ? _walk.stop : _walk.start),
                 icon: Icon(icon, color: color),
                 label: Text(label),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Kendi hücreme dokununca alttan çıkan kart: yapı yoksa "Çadır kur",
+  /// varsa yapı bilgisi. Fiyat gösterim içindir; kararı sunucu verir.
+  Widget _buildCard(String cell) {
+    final text = Theme.of(context).textTheme;
+    final level = _owned[cell]?.level ?? 0;
+    final coins = _balance?.coins;
+    final canAfford = coins == null || coins >= GameConfig.tentCost;
+    final err = _buildError;
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            boxShadow: AppTheme.softShadow,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                level >= 1 ? '⛺ Çadır' : 'Bölgene çadır kur',
+                style: text.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                level >= 1
+                    ? 'Seviye $level • Bu bölge senin'
+                    : 'İlk yapın bölgeni süsler.',
+                style: text.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              if (err != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  err,
+                  style: text.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.danger,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => setState(() => _selected = null),
+                    child: Text(level >= 1 ? 'Kapat' : 'Vazgeç'),
+                  ),
+                  if (level < 1) ...[
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      style: AppTheme.goldButton,
+                      onPressed: _buildBusy || !canAfford
+                          ? null
+                          : () => _buildTent(cell),
+                      icon: _buildBusy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.monetization_on_rounded),
+                      label: Text(
+                        canAfford
+                            ? 'Kur • ${GameConfig.tentCost}'
+                            : '${GameConfig.tentCost} altın gerekli',
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
@@ -474,6 +843,8 @@ class _MapScreenState extends State<MapScreen>
               myLocationEnabled: ready,
               myLocationRenderMode: MyLocationRenderMode.normal,
               compassEnabled: false,
+              trackCameraPosition: true,
+              onMapClick: _onMapTap,
               onMapCreated: (c) {
                 _map = c;
                 _flyToUser();
@@ -487,20 +858,29 @@ class _MapScreenState extends State<MapScreen>
           else
             const Center(child: CircularProgressIndicator()),
           if (ready) _riseTestChip(),
-          if (ready) _walkPanel(),
+          if (ready && _selected == null) _walkPanel(),
+          if (_selected != null) _buildCard(_selected!),
+          if (_buildAnchor != null)
+            BuildCelebration(
+              progress: _buildAnim,
+              ground: _buildAnchor!.$1,
+              top: _buildAnchor!.$2,
+              cost: GameConfig.tentCost,
+              puffs: _puffs,
+              onSkip: () => _buildAnim.animateTo(
+                1,
+                duration: const Duration(milliseconds: 80),
+              ),
+            ),
           if (_balance != null)
             SafeArea(
               child: Align(
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Chip(
-                    backgroundColor: AppColors.surface,
-                    avatar: const Icon(
-                      Icons.monetization_on_rounded,
-                      color: AppColors.text,
-                    ),
-                    label: Text('${_balance!.coins}'),
+                  child: _CoinCounter(
+                    coins: _balance!.coins,
+                    reduceMotion: MediaQuery.of(context).disableAnimations,
                   ),
                 ),
               ),
@@ -539,6 +919,78 @@ class _MapScreenState extends State<MapScreen>
           : null,
     );
   }
+}
+
+/// Altın sayacı (sol üst): tereyağı sarısı kart. Değer değişince sayarak
+/// gider ve hafifçe sıçrar (plan 14.1-C "kasa" hissi).
+class _CoinCounter extends StatelessWidget {
+  const _CoinCounter({required this.coins, required this.reduceMotion});
+
+  final int coins;
+  final bool reduceMotion;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w900,
+      color: AppColors.text,
+    );
+    final ms = reduceMotion ? 0 : 600;
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(coins),
+      tween: Tween(begin: reduceMotion ? 1 : 1.18, end: 1),
+      duration: Duration(milliseconds: ms),
+      curve: Curves.elasticOut,
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 6, 14, 6),
+        decoration: BoxDecoration(
+          color: AppColors.accentButter,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.monetization_on_rounded, color: AppColors.text),
+            const SizedBox(width: 6),
+            _CountUp(value: coins, ms: ms, style: style),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Sayıyı önceki değerden yenisine sayarak gösterir.
+class _CountUp extends StatefulWidget {
+  const _CountUp({required this.value, required this.ms, this.style});
+  final int value;
+  final int ms;
+  final TextStyle? style;
+
+  @override
+  State<_CountUp> createState() => _CountUpState();
+}
+
+class _CountUpState extends State<_CountUp> {
+  late int _from = widget.value;
+
+  @override
+  void didUpdateWidget(_CountUp old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value) _from = old.value;
+  }
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    key: ValueKey(widget.value),
+    tween: Tween(begin: _from.toDouble(), end: widget.value.toDouble()),
+    duration: Duration(milliseconds: widget.ms),
+    curve: Curves.easeOutCubic,
+    builder: (context, v, _) => Text('${v.round()}', style: widget.style),
+  );
 }
 
 class _PermissionCard extends StatelessWidget {

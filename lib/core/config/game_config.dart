@@ -43,6 +43,37 @@ abstract final class GameConfig {
   static const walkNotificationTitle = 'Catch Me aktif';
   static const walkNotificationText = 'Yürüyüşün takip ediliyor';
 
+  /// Adım 2.2: çadır. Fiyat sunucudaki `build_cost_1` ile aynı (sadece
+  /// gösterim; kararı sunucu verir).
+  static const tentCost = 100;
+
+  /// Çadır ölçüleri hücre yarıçapına oranla (her hücreye aynı oranda oturur,
+  /// zoom'la birlikte ölçeklenir): yarım genişlik, yarım boy, yükseklik.
+  static const tentHalfWidth = 0.24;
+  static const tentHalfLength = 0.30;
+  static const tentHeight = 0.30;
+
+  /// Çatı basamak sayısı (çok = pürüzsüz, az = oyuncak blok); çizgili kumaş
+  /// her basamakta renk değiştirir.
+  static const tentSlices = 8;
+
+  /// Gölge kayması (yarıçap oranı, ışık sol üstten → gölge sağ alta).
+  static const tentShadowOffset = 0.07;
+  static const tentShadowOpacity = 0.18;
+
+  /// Bu zoom altında yapılar çizilmez (uzaktan kalabalık olmasın).
+  static const structureMinZoom = 13.0;
+
+  /// İnşa animasyonu: toplam süre (ms), kamera odaklama (ms) ve zoom,
+  /// squash & stretch tepe/çukur ölçeği (plan 14.1-C: 0 → %110 → %100).
+  static const buildAnimMs = 1200;
+  static const buildFocusMs = 450;
+  static const buildFocusZoom = 16.5;
+  static const buildStretch = 1.12;
+  static const buildSquash = 0.92;
+  static const buildDustPuffs = 9;
+  static const buildDustPuffsLite = 4;
+
   /// Ayarlar ekranı gelene kadar sabit: ses / titreşim açık mı.
   static const hapticsEnabled = true;
   static const soundEnabled = true;
