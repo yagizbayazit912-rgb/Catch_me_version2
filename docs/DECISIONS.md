@@ -86,3 +86,4 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Konum şartı yok:** Gelir her yerden toplanır (günlük dönüş için).
 - **Tavan aşınca fazlası yanar**; sayaç toplama anına çekilir. Kesirli gelir korunur.
 - **Kasa periyodik okunur** (`incomePollSec` = 60 sn), istemci kendisi saymaz; oran/tavan sadece sunucu config'inde.
+- **Sahiplenme süresi 5 dk** (`claim_seconds` = 300, önce 600). Test ve başlangıç hızı için; 5 bölge limiti ve devralma olmadığı için dengeyi bozmuyor. Devralma (30 dk) gelince dengeleme turunda birlikte ayarlanacak. Kayıt: `20261009030000_claim_5min.sql`.

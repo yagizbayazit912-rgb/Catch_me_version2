@@ -67,8 +67,8 @@ Günlük döngü: Uygulamayı aç → biriken geliri topla → günlük görevle
 ## 5. Bölge Sahiplenme Mekaniği
 
 ### 5.1 Varlık (presence) ve süre
-- Oyuncu bir altıgenin içindeyken **"varlık puanı"** birikir. Örnek: bölgede **10 dakika** cumulative kalınca sahiplenilir.
-- Süre kesintisiz olmak zorunda değil, **toplam birikim** sayılır (ör. 24 saat içinde toplam 10 dk).
+- Oyuncu bir altıgenin içindeyken **"varlık puanı"** birikir. Bölgede **5 dakika** (config `claim_seconds`; ilk tasarım 10 dk idi) toplam kalınca sahiplenilir.
+- Süre kesintisiz olmak zorunda değil, **toplam birikim** sayılır (ör. 24 saat içinde toplam 5 dk).
 - Sahipsiz bölge ilk ulaşan oyuncuya geçer. Sahipli bölgeye birikim yapılırsa "meydan okuma" (bkz. 5.3).
 
 ### 5.2 Sahiplik limitleri
