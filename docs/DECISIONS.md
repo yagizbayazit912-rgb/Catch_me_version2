@@ -49,6 +49,23 @@
 - **Gizlilik:** İhlal kaydında koordinat yok, sadece h3 + hız + doğruluk. Tablolar sadece service_role.
 - iOS mock tespiti (sadece hız/sıçrama) iOS'a geçerken tekrar ele alınacak.
 
+## Mini oyun ve seviye sistemi (tasarım kararı, 2026-10-08; kod yok)
+Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun fazı", M.0–M.5). Prototip sevilmezse bu bölümün sadece "Seviye = yapı" kısmı geçerli kalır.
+- **Hibrit sahiplenme:** Sahipsiz hücre = kısa presence ile claim (mevcut mekanik, süre config). Başkasının hücresi = skorlu **meydan okuma** (sahibin savunma skorunu geçen devralır, beraberlikte sahip). Kendi hücre = **sınırsız "Geliştirme"** oyunu. Zamanı beklemek çekirdek mekanik olmaktan çıkar, sadece pasif gelir kalır.
+- **Mini oyun: Hex Merge.** 19 hücreli (yarıçap 2) altıgen tahta, sıradaki karo seed'den gelir, bağlı aynı sayılar birleşir, zincir/combo çarpanı, tahta dolunca biter. Skor combo ve süre etkenlerini zaten içerir. Replay = sadece hücre indeksi listesi. Birleşme kuralı (2+ bağlı mı, 3+ mı) prototipte denenip seçilecek.
+- **Adil seed:** Aynı hücre + aynı gün = aynı seed (sunucudan). İkinci denemede öğrenme/ustalık hissi.
+- **Sunucu doğrulaması:** Skor istemciden güvenilmez; `submit` motoru TypeScript (Edge Function) ile yeniden oynatır, oturum süresi/minimum hamle süresi/skor tavanı ve "hâlâ o hücrede mi" (`ping_state`) kontrol edilir. Şüpheli skor 1.5'teki ihlal sistemine bağlanır. Motor Dart + TS iki dilde: PRNG elle tanımlı ve 32-bit maskeli, ortak "altın" replay test vektörleriyle parite doğrulanır. Yerelde Deno yok (LESSONS) → M.2'de çözülmeli.
+- **Seviye = yapı:** Hücrede tek `level` alanı; seviye 1 çadır, 2 ev, 3 otel, 4 gökdelen (yapı tipi seviyeden türer, eşikler/gelir çarpanı config). **Yükseltme kaynağı şimdilik altın** (2.2/2.4); mini oyun onaylanırsa **GP ile ikinci yol** eklenir, aynı `level` alanını artırır, hiçbir şey sökülmez.
+- **GP (Gelişim Puanı):** Sadece oyun skorundan (ek bonus yok). Günlük yumuşak tavan: ilk N oyun tam GP, sonrası azalan (config). Kaybeden oyun da az GP verir. Sadece sunucuda doğrulanmış oyun GP verir.
+- **Seviye düşmez; devralmada bir miktar düşer, "çok değil"** (ör. bir kademe veya %20–25; oran config). Seviye üst sınırı **açık**, sonra karar verilecek.
+- **Savunma skoru ≠ seviye:** Savunma skoru günlük en iyi skor ve zamanla **aşınır** (config); seviye kalıcı gelişimi gösterir. Devralma sonrası yeni sahibe kısa koruma penceresi, eski sahibe rövanş denemesi.
+- **Meydan okuma sıklığı:** Hak yerine soğuma süresi (art arda başarısızlıkta); yeni hücreye girince ek deneme. Kendi hücrede sınır yok. Ev sahibi avantajı bilinçli.
+- **Güvenlik/etik:** Mini oyun sadece hız eşiğinin altında açılır (13+ kitle, yürürken ekran bakmayı teşvik yok). Sahte aciliyet, "devam için öde" baskısı yok. Uzun oturumda hafif mola hatırlatması düşünülebilir.
+- **Gizlilik:** Diğer oyunculara sadece skor ve takma ad döner, koordinat asla.
+- **Antrenman modu:** Konum gerekmez, ödül yok; tutorial olarak da kullanılır.
+- **Açık kalanlar:** Seviye üst sınırı, GP/skor oranı, seviye eşikleri, aşınma yüzdesi, günlük tavan sayıları, birleşme kuralı. Oyun oynanabilir olunca ayarlanır.
+- **Fikir olarak park edildi (kapsam dışı):** Res 8 "semt" katmanı (semt kralı/haftalık sezon), mutatörler (aynı motorda varyasyon), bölge savunma (asenkron PvP) oyunu, takım/kulüp.
+
 ## Sonraya kalanlar (bölüm 19 listesi bitince ele alınacak)
-- **Devralma (PROJE_PLANI 5.3):** Bölüm 19'da hiçbir adıma bağlı değil. `accrue_presence` sahipli bölgede süreyi biriktiriyor ama devralma yapmıyor (`owned_by_other`). Temel mekanik; ayrı adım olarak eklenmeli (yürüyüş modu 1.6'dan sonra test edilebilir). Uyarı ve kayıp bildirimleri de bu kapsamda.
+- **Devralma (PROJE_PLANI 5.3):** *(Çözüm yönü: skorlu meydan okuma, yukarıdaki "Mini oyun ve seviye sistemi", PROJE_PLANI M.4.)* Bölüm 19'da hiçbir adıma bağlı değil. `accrue_presence` sahipli bölgede süreyi biriktiriyor ama devralma yapmıyor (`owned_by_other`). Temel mekanik; ayrı adım olarak eklenmeli (yürüyüş modu 1.6'dan sonra test edilebilir). Uyarı ve kayıp bildirimleri de bu kapsamda.
 - **Bölge el değiştirme animasyonu:** Sahip değişince (kaybetme/devralma) renk sessizce güncelleniyor; bölüm 14.1'de tarifi yok. Cila turunda tasarlanacak.

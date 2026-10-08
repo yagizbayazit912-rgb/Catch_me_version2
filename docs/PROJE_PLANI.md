@@ -516,13 +516,24 @@ Her adımın "bitti sayılır" ölçütü vardır. Agent o ölçüt sağlanınca
 | Adım | İş | Bitti sayılır |
 |---|---|---|
 | 2.1 | Altın bakiyesi + `transactions` | Tüm para hareketleri kayıtlı |
-| 2.2 | Çadır inşası + inşa animasyonu | Çadır dikilirken animasyon oynuyor, bakiye düşüyor |
-| 2.3 | Gelir birikimi ve "topla" (sikkeler sayaca uçar) | Gelir toplanıyor, animasyon çalışıyor |
-| 2.4 | Ev / Otel / Gökdelen + yükseltme animasyonları | Dört seviye de inşa/yükseltilebiliyor |
+| 2.2 | Çadır inşası + inşa animasyonu. Hücrede `level` alanı (1 = çadır); yapı tipi seviyeden türer, yükseltme kaynağı altın | Çadır dikilirken animasyon oynuyor, bakiye düşüyor |
+| 2.3 | Gelir birikimi ve "topla" (sikkeler sayaca uçar). Gelir çarpanı `level`'e göre config'ten | Gelir toplanıyor, animasyon çalışıyor |
+| 2.4 | Ev / Otel / Gökdelen + yükseltme animasyonları (seviye 2–4, altınla; ileride GP ile de) | Dört seviye de inşa/yükseltilebiliyor |
 | 2.5 | Kira mekaniği (cooldown, tavan, yeni oyuncu koruması) | Başkasının bölgesine girince kira işliyor |
+
+### Mini oyun fazı (TASLAK: M.0 prototipi sevilirse uygulanır)
+Karar ayrıntıları: `docs/DECISIONS.md` → "Mini oyun ve seviye sistemi". Numaralar Faz 3 ile çakışmasın diye `M` önekli; Faz 2 sırasından bağımsız, 2.1–2.5 mini oyuna bağlı değil (yalnızca `level` alanı ortak).
+| Adım | İş | Bitti sayılır |
+|---|---|---|
+| M.0 | Hex Merge prototipi (projeden bağımsız tek sayfa): birleşme kuralı, karo olasılığı, tahta boyutu, combo ve "bir tur daha" hissi denenir | Kullanıcı oynayıp oyunu sevdiğini ve kuralları onayladığını söylüyor; kurallar kısa bir kural belgesine yazılıyor |
+| M.1 | Dart motoru: tahta, birleşme, skor, seed'li PRNG (UI yok) + birim testleri | `flutter test` geçiyor |
+| M.2 | TypeScript motoru (Edge Function için) + ortak altın replay test vektörleri | Aynı replay Dart ve TS'te aynı skoru veriyor; yerelde Deno/Node ile çalışıyor |
+| M.3 | Tahta ekranı (`CustomPainter`, tema, haptik/ses/partikül, yedek mod) + antrenman modu (sunucusuz) | Cihazda oynanıyor, akıcı, atlanabilir animasyonlar |
+| M.4 | `challenge_sessions`, `hex_scores`, GP/seviye; `start_challenge`, `submit_develop` (kendi hücre, GP), `submit_challenge` (devralma); harita hücre kartı (Oyna / Meydan oku) | Kendi hücrede GP ile seviye atlıyor; başkasının hücresinde skoru geçince devralma + animasyon; sahte skor reddediliyor |
+| M.5 | Savunma skoru aşınması, koruma penceresi, rövanş, kayıp bildirimi, devralmada seviye düşüşü | Elle zaman kaydırarak her kural doğrulanıyor |
 
 *Faz 3 ve sonrası adımları, Faz 2 bitince birlikte yazarız (plan o zamana kadar değişebilir).*
 
 ---
 
-*Son güncelleme: 1 Ekim 2026 — Sürüm 0.3 (animasyon/3D, adım adım çalışma ve öğrenme günlüğü eklendi)*
+*Son güncelleme: 8 Ekim 2026 — Sürüm 0.4 (mini oyun fazı taslağı, seviye = yapı kararı eklendi)*
