@@ -24,7 +24,3 @@ Proje: Konum tabanlı, altıgen (H3 Res 9) bölge sahiplenme oyunu. Flutter + Su
 - Diğer oyunculara **kesin koordinat asla** dönme.
 - API anahtarı/gizli bilgi repoya yazılmaz. Supabase'de tüm tablolarda RLS açık.
 - Animasyonlar UI'yı bloklamaz, atlanabilir, "hareketi azalt" ayarına uyar, düşük donanımda yedek moda düşer.
-
-
-## Bekleyen işler
-Adım 1.2 başladığında ve bitince kullanıcıya hatırlat: Adım 1.6 (Yürüyüş modu) planlandı ve henüz yapılmadı. Yapılınca bu satırı sil.

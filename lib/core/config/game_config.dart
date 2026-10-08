@@ -34,6 +34,15 @@ abstract final class GameConfig {
   static const claimSparkles = 14;
   static const claimSparklesLite = 5;
 
+  /// Adım 1.6: yürüyüş modu. Ping aralığı (sn), konum filtresi (m),
+  /// otomatik duraklama hızı (25 km/s) ve geçiş için ardışık okuma sayısı.
+  static const walkPingIntervalSec = 15;
+  static const walkDistanceFilterM = 0;
+  static const walkMaxSpeedMps = 25 / 3.6;
+  static const walkSpeedStreak = 2;
+  static const walkNotificationTitle = 'Catch Me aktif';
+  static const walkNotificationText = 'Yürüyüşün takip ediliyor';
+
   /// Ayarlar ekranı gelene kadar sabit: ses / titreşim açık mı.
   static const hapticsEnabled = true;
   static const soundEnabled = true;

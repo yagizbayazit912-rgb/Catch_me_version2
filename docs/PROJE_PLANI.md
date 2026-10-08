@@ -364,7 +364,7 @@ seasons          (id, name, starts_at, ends_at)
 - [ ] Hafif 3D görünüm (eğimli kamera, yükseltilmiş altıgenler) — Adım 0.5 sonucuna göre
 - [ ] Bölge sahiplenme animasyonu (bölüm 14.1-B), haptik ve ses
 - [ ] Temel hile kontrolleri (hız, doğruluk)
-- [ ] Yürüyüş modu (Adım 1.6)
+- [x] Yürüyüş modu (Adım 1.6) — kod hazır, cihaz testi bekliyor
 
 ### 🟡 Faz 2 — Ekonomi ve Yapılar (2–3 hafta)
 - [ ] Altın bakiyesi, `transactions` altyapısı

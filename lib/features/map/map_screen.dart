@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/hex_repository.dart';
 import '../../data/ping_repository.dart';
 import 'claim_celebration.dart';
+import 'walk_controller.dart';
 
 /// Ana harita ekranı: pastel MapLibre stili + ön plan konum izni.
 class MapScreen extends StatefulWidget {
@@ -52,7 +53,10 @@ class _MapScreenState extends State<MapScreen>
   String? _risingCell;
   bool _ownedBusy = false;
   bool _ownedAgain = false;
-  String? _pingText;
+  late final WalkController _walk = WalkController(_ping, onPing: _onWalkPing)
+    ..addListener(() {
+      if (mounted) setState(() {});
+    });
   bool _celebrating = false;
   late final AnimationController _rise = AnimationController(
     vsync: this,
@@ -78,6 +82,7 @@ class _MapScreenState extends State<MapScreen>
 
   @override
   void dispose() {
+    _walk.dispose();
     _rise.dispose();
     super.dispose();
   }
@@ -348,37 +353,66 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
-  /// Adım 1.1 deneme: güncel konumu sunucuya yollar, sunucunun bulduğu
-  /// altıgeni yerel hesapla karşılaştırır. Yürüyüş modu (1.6) gelince kalkacak.
-  Future<void> _sendPing() async {
-    setState(() => _pingText = 'Gönderiliyor…');
-    String text;
-    try {
-      final pos = await Geolocator.getCurrentPosition();
-      final res = await _ping.send(pos);
-      if (res.ok) {
-        if (res.claimed) _celebrateClaim(res.h3);
-        final local = _myCell.cellAt(pos.latitude, pos.longitude);
-        final match = res.h3 == local ? '✓ eşleşti' : '✗ FARKLI ($local)';
-        text =
-            'Ping ok • ${res.h3} $match'
-            ' • ${res.speedMps} m/s'
-            '${res.countsForPresence == false ? ' • varlık yok' : ''}';
-      } else {
-        final until = res.suspendedUntil;
-        final suffix = until == null
-            ? ''
-            : ' • askı ${until.hour.toString().padLeft(2, '0')}:'
-                  '${until.minute.toString().padLeft(2, '0')} kadar';
-        text = 'Reddedildi: ${res.reasonText}$suffix';
-      }
-    } catch (e) {
-      text = 'Ping hatası: $e';
-    }
-    if (mounted) setState(() => _pingText = text);
+  /// Yürüyüş modundan gelen her sunucu cevabı: claim olduysa kutlama.
+  void _onWalkPing(PingResult res) {
+    if (mounted && res.ok && res.claimed) _celebrateClaim(res.h3);
   }
 
-  /// Geçici deneme paneli: 3D animasyonu tekrar oynatır (0.5), ping atar (1.1).
+  /// Yürüyüş modu başlat/durdur butonu + durum göstergesi (açık/duraklı/kapalı).
+  Widget _walkPanel() {
+    final s = _walk.state;
+    final (label, icon, color) = switch (s) {
+      WalkState.off => ('Yürüyüşe başla', Icons.directions_walk_rounded, null),
+      WalkState.starting => ('Başlatılıyor…', Icons.hourglass_top_rounded, null),
+      WalkState.active => (
+        'Yürüyüş açık • durdur',
+        Icons.stop_circle_rounded,
+        AppColors.ownHex,
+      ),
+      WalkState.pausedFast => (
+        'Duraklatıldı (hızlısın) • durdur',
+        Icons.pause_circle_rounded,
+        AppColors.secondary,
+      ),
+    };
+    final note = _walk.status;
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (note != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadii.card),
+                  ),
+                  child: Text(note),
+                ),
+              ElevatedButton.icon(
+                style: AppTheme.confirmButton,
+                onPressed: s == WalkState.starting
+                    ? null
+                    : (_walk.running ? _walk.stop : _walk.start),
+                icon: Icon(icon, color: color),
+                label: Text(label),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Geçici deneme paneli: 3D animasyonu tekrar oynatır (0.5).
   Widget _riseTestChip() {
     final rate = _riseUpdatesPerSec;
     return SafeArea(
@@ -401,24 +435,6 @@ class _MapScreenState extends State<MapScreen>
                       : '3D tekrar • ${rate.toStringAsFixed(0)} güncelleme/sn',
                 ),
                 onPressed: _playRise,
-              ),
-              ActionChip(
-                backgroundColor: AppColors.surface,
-                avatar: const Icon(
-                  Icons.cell_tower_rounded,
-                  color: AppColors.text,
-                ),
-                label: Text(_pingText ?? 'Ping gönder'),
-                onPressed: _sendPing,
-              ),
-              ActionChip(
-                backgroundColor: AppColors.surface,
-                avatar: const Icon(
-                  Icons.celebration_rounded,
-                  color: AppColors.text,
-                ),
-                label: const Text('Claim animasyonu dene'),
-                onPressed: _celebrateClaim,
               ),
             ],
           ),
@@ -459,6 +475,7 @@ class _MapScreenState extends State<MapScreen>
           else
             const Center(child: CircularProgressIndicator()),
           if (ready) _riseTestChip(),
+          if (ready) _walkPanel(),
           if (_celebrating)
             ClaimCelebration(
               reduceMotion: MediaQuery.of(context).disableAnimations,
