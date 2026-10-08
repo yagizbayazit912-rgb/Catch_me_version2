@@ -74,8 +74,8 @@ abstract final class GameConfig {
   static const buildVibratePattern = [0, 25, 70, 45];
   static const buildVibrateIntensities = [0, 110, 0, 200];
 
-  /// Gölge kayması (yarıçap oranı, ışık sol üstten → gölge sağ alta).
-  static const tentShadowOffset = 0.07;
+  /// Gölge boyu: yüksekliğin bu katı kadar sağ alta uzar (ışık sol üstten).
+  static const tentShadowLength = 0.55;
   static const tentShadowOpacity = 0.18;
 
   /// Bu zoom altında yapılar çizilmez (uzaktan kalabalık olmasın).

@@ -564,7 +564,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final tents = <Map<String, dynamic>>[];
     for (final h in _owned.values) {
       if (h.level < 1 || !_visible.contains(h.h3)) continue;
-      shadows.add(_tent.shadow(h.h3));
+      shadows.addAll(_tent.shadow(h.h3));
       if (h.h3 != _buildingCell) {
         tents.addAll(_tent.parts(h.h3, _ownedColor(h)));
       }

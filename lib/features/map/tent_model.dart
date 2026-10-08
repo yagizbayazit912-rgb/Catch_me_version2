@@ -19,7 +19,7 @@ class TentModel {
 
   final HexService _hex;
   final _cache = <String, List<Map<String, dynamic>>>{};
-  final _shadowCache = <String, Map<String, dynamic>>{};
+  final _shadowCache = <String, List<Map<String, dynamic>>>{};
 
   /// Hücrenin ortalama yarıçapı (metre).
   double radius(String h3) => _Frame(_hex, h3).r;
@@ -30,52 +30,60 @@ class TentModel {
     return _cache[key] ??= _build(h3, flag);
   }
 
-  /// Yerdeki yumuşak gölge (ayrı, yarı saydam katmanda çizilir).
-  Map<String, dynamic> shadow(String h3) => _shadowCache[h3] ??= () {
+  /// Çadırın şeklinden düşen gölge (ayrı, yarı saydam katmanda çizilir).
+  /// Işık sol üstten → gölge sağ alta: çadırın her yüksekliğindeki kesit,
+  /// yüksekliğiyle orantılı kaydırılıp zemine yansıtılır; gövde gölgesi bu
+  /// noktaların dış sınırı (dışbükey zarf). Direk ayrı ince bir şerit.
+  List<Map<String, dynamic>> shadow(String h3) => _shadowCache[h3] ??= () {
     final f = _Frame(_hex, h3);
-    final o = GameConfig.tentShadowOffset * f.r;
-    return _feature(
-      h3,
-      f.rect(
-        0,
-        0,
-        GameConfig.tentHalfLength * f.r * 1.12,
-        GameConfig.tentHalfWidth * f.r * 1.3,
-        dx: o,
-        dy: -o,
-      ),
-      AppColors.text,
-      0,
-      0.4,
-    );
+    final s = _Shape(f.r);
+    const k = GameConfig.tentShadowLength;
+    // Işığın tersi (dünyada güney-doğu), birim vektör.
+    const dx = 0.7071, dy = -0.7071;
+
+    final pts = <List<double>>[];
+    for (var i = 0; i <= 6; i++) {
+      final p = i / 6 * 0.98;
+      final z = s.height * p;
+      final hu = s.frontAt(p), hw = s.widthAt(p);
+      for (final c in const [
+        [-1.0, -1.0],
+        [1.0, -1.0],
+        [1.0, 1.0],
+        [-1.0, 1.0],
+      ]) {
+        final q = f.world(c[0] * hu, c[1] * hw);
+        pts.add([q[0] + dx * k * z, q[1] + dy * k * z]);
+      }
+    }
+    final body = _hull(pts);
+
+    // Direk: tabanı sırtta (0.9 H), tepesi topuzda (1.56 H).
+    final pw = 0.012 * f.r;
+    final z0 = s.height * 0.9, z1 = s.height * 1.56;
+    final pole = [
+      [dx * k * z0 - dy * pw, dy * k * z0 + dx * pw],
+      [dx * k * z1 - dy * pw, dy * k * z1 + dx * pw],
+      [dx * k * z1 + dy * pw, dy * k * z1 - dx * pw],
+      [dx * k * z0 + dy * pw, dy * k * z0 - dx * pw],
+    ];
+
+    return [
+      _feature(h3, f.ring(body), AppColors.text, 0, 0.3),
+      _feature(h3, f.ring(pole), AppColors.text, 0, 0.3),
+    ];
   }();
 
   List<Map<String, dynamic>> _build(String h3, Color flag) {
     final f = _Frame(_hex, h3);
     final r = f.r;
-    final halfW = GameConfig.tentHalfWidth * r;
-    final halfL = GameConfig.tentHalfLength * r;
-    final height = GameConfig.tentHeight * r;
+    final s = _Shape(r);
+    final height = s.height;
     const n = GameConfig.tentSlices;
+    final widthAt = s.widthAt;
+    final frontAt = s.frontAt;
 
     final out = <Map<String, dynamic>>[];
-
-    // Profil: p (0 taban → 1 tepe) yüksekliğinde yarım genişlik ve ön yüzün
-    // konumu. Çan eğrisi: taban geniş, tepe sivri; uçlar hafif içe eğik.
-    double widthAt(double p) =>
-        halfW * math.pow(1 - p, GameConfig.tentBellExp).toDouble();
-    double frontAt(double p) => halfL * (1 - GameConfig.tentGableLean * p);
-
-    // Kilim: çadırın altında, önde biraz taşan ince lavanta zemin.
-    out.add(
-      _feature(
-        h3,
-        f.rect(halfL * 0.12, 0, halfL * 1.28, halfW * 1.22),
-        AppColors.tentRug,
-        0,
-        0.5,
-      ),
-    );
 
     // Gövde: daralan basamaklar; her iki basamakta bir renk → kalın çizgi.
     for (var k = 0; k < n; k++) {
@@ -184,6 +192,47 @@ class TentModel {
   };
 }
 
+/// Çadır profili: p (0 taban → 1 tepe) yüksekliğinde yarım genişlik ve ön
+/// yüzün konumu. Çan eğrisi: taban geniş, tepe sivri; uçlar hafif içe eğik.
+class _Shape {
+  _Shape(double r)
+    : halfW = GameConfig.tentHalfWidth * r,
+      halfL = GameConfig.tentHalfLength * r,
+      height = GameConfig.tentHeight * r;
+
+  final double halfW, halfL, height;
+
+  double widthAt(double p) =>
+      halfW * math.pow(1 - p, GameConfig.tentBellExp).toDouble();
+  double frontAt(double p) => halfL * (1 - GameConfig.tentGableLean * p);
+}
+
+/// Dışbükey zarf (monotone chain), saat yönünün tersine.
+List<List<double>> _hull(List<List<double>> pts) {
+  final p = [
+    ...pts,
+  ]..sort((a, b) => a[0] != b[0] ? a[0].compareTo(b[0]) : a[1].compareTo(b[1]));
+  double cross(List<double> o, List<double> a, List<double> b) =>
+      (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  final lower = <List<double>>[];
+  for (final q in p) {
+    while (lower.length >= 2 &&
+        cross(lower[lower.length - 2], lower.last, q) <= 0) {
+      lower.removeLast();
+    }
+    lower.add(q);
+  }
+  final upper = <List<double>>[];
+  for (final q in p.reversed) {
+    while (upper.length >= 2 &&
+        cross(upper[upper.length - 2], upper.last, q) <= 0) {
+      upper.removeLast();
+    }
+    upper.add(q);
+  }
+  return [...lower..removeLast(), ...upper..removeLast()];
+}
+
 /// `#rrggbb` (MapLibre renk dizisi).
 String cssColor(Color c) =>
     '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
@@ -212,6 +261,17 @@ class _Frame {
 
   static const _mLat = 110574.0;
   late final double lng0, lat0, mLng, r, ux, uy;
+
+  /// (u, w) → dünya metresi [x doğu, y kuzey].
+  List<double> world(double u, double w) => [u * ux - w * uy, u * uy + w * ux];
+
+  /// Dünya metresi noktalarından kapalı [lng, lat] halka.
+  List<List<double>> ring(List<List<double>> xy) {
+    final out = [
+      for (final q in xy) [lng0 + q[0] / mLng, lat0 + q[1] / _mLat],
+    ];
+    return [...out, out.first];
+  }
 
   /// [cu],[cw] merkezli, u boyunca ±[hu], w boyunca ±[hw] dikdörtgen;
   /// [dx],[dy] ek dünya kayması (metre). Kapalı halka [lng, lat].

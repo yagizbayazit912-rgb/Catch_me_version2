@@ -29,13 +29,12 @@ abstract final class AppColors {
   static const ownHex = primary;
 
   /// Adım 2.2: çadır. Kumaş krem + şeftali çizgi, kapı içi sıcak kakao
-  /// (gölgeli açıklık hissi), kanatlar açık şeftali, direk ahşap, kilim lavanta.
+  /// (gölgeli açıklık hissi), kanatlar açık şeftali, direk ahşap.
   static const tentCanvas = Color(0xFFFFF4E6);
   static const tentStripe = Color(0xFFFFB38A);
   static const tentDoor = Color(0xFFB9785F);
   static const tentFlap = Color(0xFFFFD9C2);
   static const tentPole = Color(0xFFA07856);
-  static const tentRug = accentLavender;
   static const tentKnob = accentButter;
 
   /// Başka oyuncuların bölgeleri (kendi rengimle karışmasın diye primary yok).
