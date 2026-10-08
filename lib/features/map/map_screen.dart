@@ -847,6 +847,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               onMapClick: _onMapTap,
               onMapCreated: (c) {
                 _map = c;
+                // Etkileşimli katmandaki bir parçaya (blok/çadır) dokunulunca
+                // eklenti onMapClick yerine bunu çağırır.
+                c.onFeatureTapped.add(
+                  (pt, ll, id, layerId, annotation) => _onMapTap(pt, ll),
+                );
                 _flyToUser();
               },
               onCameraIdle: _refreshOwned,
