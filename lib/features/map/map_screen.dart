@@ -174,7 +174,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             scale,
           ],
         ],
-        fillExtrusionVerticalGradient: true,
+        // İnce basamaklarda gradyan şeritlenme yapar; düz renk daha temiz.
+        fillExtrusionVerticalGradient: false,
       );
 
   FillExtrusionLayerProperties get _shadowProps => FillExtrusionLayerProperties(
@@ -306,7 +307,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final c = _hex.center(cell);
     final target = LatLng(c[1], c[0]);
-    playClaimFeedback();
+    playBuildFeedback();
 
     if (reduce) {
       await _renderOwned();

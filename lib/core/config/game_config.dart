@@ -55,7 +55,24 @@ abstract final class GameConfig {
 
   /// Çatı basamak sayısı (çok = pürüzsüz, az = oyuncak blok); çizgili kumaş
   /// her basamakta renk değiştirir.
-  static const tentSlices = 8;
+  static const tentSlices = 14;
+
+  /// Çan profili üssü (1 = düz A, büyük = taban geniş tepe sivri) ve ön/arka
+  /// yüzün yukarı doğru içe eğimi (yarım boy oranı).
+  static const tentBellExp = 1.3;
+  static const tentGableLean = 0.12;
+
+  /// Kapı: yüksekliği (çadır yüksekliğine oran) ve basamak sayısı.
+  static const tentDoorHeight = 0.55;
+  static const tentDoorSlices = 6;
+
+  /// Flama parça sayısı (uca doğru incelir).
+  static const tentPennantSegments = 4;
+
+  /// İnşa sesi ve titreşim deseni (iki kısa vuruş: "tok-tok").
+  static const buildSoundAsset = 'audio/build.wav';
+  static const buildVibratePattern = [0, 25, 70, 45];
+  static const buildVibrateIntensities = [0, 110, 0, 200];
 
   /// Gölge kayması (yarıçap oranı, ışık sol üstten → gölge sağ alta).
   static const tentShadowOffset = 0.07;

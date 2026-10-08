@@ -65,10 +65,7 @@ class HexRepository {
   /// sunucuda; dönen yeni altın bakiyesi.
   Future<int> buildTent(String h3) async {
     try {
-      final res = await _client.rpc(
-        'build_structure',
-        params: {'p_h3': h3},
-      );
+      final res = await _client.rpc('build_structure', params: {'p_h3': h3});
       return ((res as Map)['coins'] as num).toInt();
     } on PostgrestException catch (e) {
       const known = {'insufficient_funds', 'already_built', 'not_owner'};

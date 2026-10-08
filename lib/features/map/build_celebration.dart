@@ -1,10 +1,43 @@
 import 'dart:math' as math;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 
 import '../../core/config/game_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+
+/// İnşa anının sesi ve titreşimi; claim'den ayrı: toz "puf" + tahta "tok"
+/// + marimba tınısında yükselen iki nota, titreşimde çift vuruş.
+/// Medya sesi ve titreşim motoru (Altın Kural: sistem dokunma ayarına bağlı
+/// API'ler kullanılmaz); her seferinde yeni oynatıcı.
+Future<void> playBuildFeedback() async {
+  if (GameConfig.hapticsEnabled) {
+    try {
+      if (await Vibration.hasVibrator()) {
+        await Vibration.vibrate(
+          pattern: GameConfig.buildVibratePattern,
+          intensities: GameConfig.buildVibrateIntensities,
+        );
+      } else {
+        await HapticFeedback.heavyImpact();
+      }
+    } catch (_) {
+      HapticFeedback.heavyImpact();
+    }
+  }
+  if (GameConfig.soundEnabled) {
+    try {
+      final player = AudioPlayer();
+      player.onPlayerComplete.first.then((_) => player.dispose());
+      await player.play(AssetSource(GameConfig.buildSoundAsset));
+    } catch (_) {
+      // Ses dosyası yok / çalınamadı: sessiz devam.
+    }
+  }
+}
 
 /// Adım 2.2: çadır inşa anının ekran efektleri (plan 14.1-C).
 /// Zeminde işaret halkası → toz bulutu → (çadır haritada zıplar) → parıltı

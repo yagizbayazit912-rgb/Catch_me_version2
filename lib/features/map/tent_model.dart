@@ -60,56 +60,111 @@ class TentModel {
 
     final out = <Map<String, dynamic>>[];
 
-    // Gövde: her basamak biraz daralan dikdörtgen → çatı (A çadır).
-    // Renkler basamak basamak değişir → çizgili kumaş.
+    // Profil: p (0 taban → 1 tepe) yüksekliğinde yarım genişlik ve ön yüzün
+    // konumu. Çan eğrisi: taban geniş, tepe sivri; uçlar hafif içe eğik.
+    double widthAt(double p) =>
+        halfW * math.pow(1 - p, GameConfig.tentBellExp).toDouble();
+    double frontAt(double p) => halfL * (1 - GameConfig.tentGableLean * p);
+
+    // Kilim: çadırın altında, önde biraz taşan ince lavanta zemin.
+    out.add(
+      _feature(
+        h3,
+        f.rect(halfL * 0.12, 0, halfL * 1.28, halfW * 1.22),
+        AppColors.tentRug,
+        0,
+        0.5,
+      ),
+    );
+
+    // Gövde: daralan basamaklar; her iki basamakta bir renk → kalın çizgi.
     for (var k = 0; k < n; k++) {
-      final w = halfW * (1 - (k + 0.35) / n);
+      final pMid = (k + 0.5) / n;
       out.add(
         _feature(
           h3,
-          f.rect(0, 0, halfL, w),
-          k.isEven ? AppColors.accentPeach : AppColors.surface,
+          f.rect(0, 0, frontAt(pMid), math.max(widthAt(pMid), 0.012 * r)),
+          (k ~/ 2).isEven ? AppColors.tentStripe : AppColors.tentCanvas,
           height * k / n,
           height * (k + 1) / n,
         ),
       );
     }
 
-    // Kapı: ön üçgen yüzde hafif dışarı taşan koyu açıklık.
-    final doorDepth = 0.025 * r;
-    out.add(
-      _feature(
-        h3,
-        f.rect(halfL - doorDepth * 0.4, 0, doorDepth, halfW * 0.32),
-        AppColors.textSecondary,
-        0,
-        height * 0.5,
-      ),
-    );
+    // Kapı: ön yüzde üçgen açıklık (koyu kakao, hafif içeride) ve iki yanda
+    // toplanmış kanatlar (açık şeftali, biraz dışarıda) → perde açılmış gibi.
+    const m = GameConfig.tentDoorSlices;
+    final doorTop = GameConfig.tentDoorHeight;
+    final doorDepth = 0.006 * r;
+    final flapDepth = 0.014 * r;
+    for (var j = 0; j < m; j++) {
+      final q = (j + 0.5) / m; // kapı içinde 0 → 1
+      final p = q * doorTop; // çadır yüksekliğinde
+      final dHalf = 0.42 * widthAt(0) * (1 - q);
+      final fHalf = 0.11 * widthAt(0) * (1 - q * 0.85);
+      final front = frontAt(p);
+      final b = height * doorTop * j / m;
+      final t = height * doorTop * (j + 1) / m;
+      out.add(
+        _feature(
+          h3,
+          f.rect(front + doorDepth, 0, doorDepth, dHalf),
+          AppColors.tentDoor,
+          b,
+          t,
+        ),
+      );
+      for (final side in const [-1.0, 1.0]) {
+        out.add(
+          _feature(
+            h3,
+            f.rect(front + flapDepth, side * (dHalf + fHalf), flapDepth, fHalf),
+            AppColors.tentFlap,
+            b,
+            t,
+          ),
+        );
+      }
+    }
 
-    // Direk: sırtın ortasından yukarı.
-    final pole = 0.012 * r;
+    // Direk (ahşap) + tepede sarı topuz.
+    final pole = 0.010 * r;
     out.add(
       _feature(
         h3,
         f.rect(0, 0, pole, pole),
-        AppColors.textSecondary,
-        height * 0.8,
-        height * 1.5,
-      ),
-    );
-
-    // Bayrak: direğin tepesinde, sahibin renginde.
-    final flagLen = 0.09 * r;
-    out.add(
-      _feature(
-        h3,
-        f.rect(pole + flagLen, 0, flagLen, pole * 0.8),
-        flag,
-        height * 1.2,
+        AppColors.tentPole,
+        height * 0.9,
         height * 1.48,
       ),
     );
+    out.add(
+      _feature(
+        h3,
+        f.rect(0, 0, pole * 2.2, pole * 2.2),
+        AppColors.tentKnob,
+        height * 1.48,
+        height * 1.56,
+      ),
+    );
+
+    // Flama: direkten uzaklaştıkça incelen parçalar, sahibin renginde.
+    const segs = GameConfig.tentPennantSegments;
+    final segLen = 0.13 * r / segs;
+    final mid = height * 1.34;
+    final half0 = height * 0.1;
+    for (var i = 0; i < segs; i++) {
+      final hh = half0 * (1 - 0.8 * i / segs);
+      out.add(
+        _feature(
+          h3,
+          f.rect(pole + segLen * (i + 0.5), 0, segLen / 2, pole * 0.7),
+          flag,
+          mid - hh,
+          mid + hh,
+        ),
+      );
+    }
     return out;
   }
 
