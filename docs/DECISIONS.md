@@ -77,3 +77,4 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Çadır görseli 3D geometri** (fill-extrusion parçaları), sprite değil: bloğun üstüne oturur ve zoom'la ölçeklenir. Ölçü/renk oranları `GameConfig`'te.
 - **Test altını:** Altın kazanma yolu (2.3 gelir) gelene kadar `supabase/tests/grant_test_coins.sql` ile elle verilir (`dev_grant` kaydı). İstemciye altın üreten RPC açılmadı.
 - **Blok yüksekliği** şimdilik seviyeden bağımsız (40 m); plan 14.1-A "seviyeyle artar" diyor, 2.4'te ele alınacak.
+- **Çadır dokusu ertelendi:** `fill-extrusion-pattern` ile kanvas/tahta dokusu mümkün (renk+desen aynı parçada olmaz), sprite daha gerçekçi ama 3D'ye oturmaz. Kullanıcı mevcut düz renkli görünümü onayladı; cila turunda tekrar bakılabilir.
