@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:math' as math;
@@ -16,6 +17,7 @@ import '../../data/ping_repository.dart';
 import '../../data/wallet_repository.dart';
 import 'build_celebration.dart';
 import 'claim_celebration.dart';
+import 'income_celebration.dart';
 import 'tent_model.dart';
 import 'walk_controller.dart';
 
@@ -78,6 +80,23 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   final _wallet = WalletRepository();
   Wallet? _balance;
 
+  /// Adım 2.3: yapıların kasası (sunucudan, periyodik). Toplama animasyonu
+  /// sırasında yeni bakiye ilk sikke sayaca varınca uygulanır.
+  final _incomeRepo = IncomeRepository();
+  Map<String, IncomeSlot> _income = {};
+  Timer? _incomeTimer;
+  bool _collectBusy = false;
+  final _counterKey = GlobalKey();
+  final _collectKey = GlobalKey();
+  List<FlyCoin> _flyCoins = const [];
+  Offset? _collectTarget;
+  int _collectTotal = 0;
+  int? _collectBalance;
+  late final AnimationController _collectAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: GameConfig.collectAnimMs),
+  )..addListener(_onCollectTick);
+
   /// Sahiplik önbelleği: sorulan her hücrenin zamanı, sahipliler ayrı.
   final _owned = <String, OwnedHex>{};
   final _fetchedAt = <String, DateTime>{};
@@ -111,6 +130,114 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
     _resolveLocation();
     _loadBalance();
+    _loadIncome();
+    _incomeTimer = Timer.periodic(
+      const Duration(seconds: GameConfig.incomePollSec),
+      (_) => _loadIncome(),
+    );
+  }
+
+  /// Kasayı sunucudan okur; hata olursa çip eski haliyle kalır.
+  Future<void> _loadIncome() async {
+    try {
+      final list = await _incomeRepo.load();
+      if (mounted) setState(() => _income = {for (final i in list) i.h3: i});
+    } catch (_) {}
+  }
+
+  int get _pendingTotal => _income.values.fold(0, (a, i) => a + i.pending);
+
+  /// "Topla": sunucu tüm yapıların gelirini verir; sikkeler görünür
+  /// yapılardan sayaca uçar. Hareketi azalt açıksa bakiye doğrudan güncellenir.
+  Future<void> _collect() async {
+    if (_collectBusy || _collectTarget != null) return;
+    final chip = _centerOf(_collectKey);
+    setState(() => _collectBusy = true);
+    try {
+      final r = await _incomeRepo.collect();
+      if (!mounted) return;
+      setState(() {
+        _collectBusy = false;
+        _income = {
+          for (final e in _income.entries)
+            e.key: IncomeSlot(
+              h3: e.key,
+              pending: 0,
+              cap: e.value.cap,
+              isFull: false,
+            ),
+        };
+      });
+      if (r.total > 0) {
+        await _playCollect(r, chip);
+      } else {
+        _setCoins(r.coins);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _collectBusy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Toplanamadı, tekrar dene')),
+        );
+      }
+    }
+    _loadIncome();
+  }
+
+  void _setCoins(int coins) {
+    if (!mounted) return;
+    setState(() => _balance = Wallet(coins: coins, gems: _balance?.gems ?? 0));
+  }
+
+  /// Bir widget'ın ekran merkezi (sikke hedefi/kaynağı).
+  Offset? _centerOf(GlobalKey key) {
+    final box = key.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(box.size.center(Offset.zero));
+  }
+
+  /// [chip] Topla çipinin konumu; ekranda yapı yoksa sikkeler oradan çıkar.
+  Future<void> _playCollect(CollectResult r, Offset? chip) async {
+    playCollectFeedback();
+    final target = _centerOf(_counterKey);
+    if (MediaQuery.of(context).disableAnimations || target == null) {
+      _setCoins(r.coins);
+      return;
+    }
+    final screen = MediaQuery.sizeOf(context);
+    final sources = <Offset>[];
+    for (final cell in r.perCell.keys) {
+      if (!_visible.contains(cell)) continue;
+      final a = await _screenAnchor(cell);
+      if (a != null && (Offset.zero & screen).contains(a.$2)) sources.add(a.$2);
+      if (sources.length >= GameConfig.collectCoins) break;
+    }
+    if (sources.isEmpty) sources.add(chip ?? screen.center(Offset.zero));
+    if (!mounted) return;
+    setState(() {
+      _flyCoins = CollectCelebration.makeCoins(sources);
+      _collectTarget = target;
+      _collectTotal = r.total;
+      _collectBalance = r.coins;
+    });
+    await _collectAnim.forward(from: 0).orCancel.catchError((_) {});
+    final left = _collectBalance;
+    if (left != null) _setCoins(left);
+    if (mounted) {
+      setState(() {
+        _collectTarget = null;
+        _collectBalance = null;
+      });
+    }
+  }
+
+  /// İlk sikke sayaca varınca bakiye uygulanır: sayaç sayarak sıçrar.
+  void _onCollectTick() {
+    final b = _collectBalance;
+    if (b != null && _collectAnim.value >= CollectCelebration.firstArrival) {
+      _collectBalance = null;
+      _setCoins(b);
+    }
   }
 
   /// Bakiyeyi sunucudan okur; hata olursa sayaç gizli kalır.
@@ -126,6 +253,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     _walk.dispose();
     _rise.dispose();
     _buildAnim.dispose();
+    _collectAnim.dispose();
+    _incomeTimer?.cancel();
     super.dispose();
   }
 
@@ -275,6 +404,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         _balance = Wallet(coins: coins, gems: _balance?.gems ?? 0);
       });
       _playBuild(cell);
+      _loadIncome();
     } on BuildException catch (e) {
       if (e.code == 'already_built' || e.code == 'not_owner') {
         _fetchedAt.remove(cell);
@@ -304,7 +434,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final map = _map;
     if (map == null || !_hexDrawn) return;
     final reduce = MediaQuery.of(context).disableAnimations;
-    final dpr = MediaQuery.devicePixelRatioOf(context);
     final c = _hex.center(cell);
     final target = LatLng(c[1], c[0]);
     playBuildFeedback();
@@ -331,29 +460,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       );
       await _renderOwned();
 
-      // Efektlerin ekran konumu: zemin noktası + blok/çadır yüksekliğinin
-      // eğik kameradaki izdüşümü. Android piksel döner → mantıksal piksele.
-      final p = await map.toScreenLocation(target);
-      final s = Platform.isAndroid ? dpr : 1.0;
-      final cam = map.cameraPosition;
-      final zoom = cam?.zoom ?? GameConfig.buildFocusZoom;
-      final tilt = (cam?.tilt ?? GameConfig.mapTilt) * math.pi / 180;
-      final mpp =
-          40075016.686 *
-          math.cos(c[1] * math.pi / 180) /
-          (512 * math.pow(2, zoom));
-      final up = math.sin(tilt) / mpp;
-      final base = Offset(p.x / s, p.y / s);
-      final tentTop =
-          GameConfig.hexExtrusionHeight +
-          GameConfig.tentHeight * _tent.radius(cell);
-      if (!mounted) return;
+      final anchor = await _screenAnchor(cell);
+      if (!mounted || anchor == null) return;
       setState(() {
         _puffs = BuildCelebration.makePuffs();
-        _buildAnchor = (
-          base - Offset(0, GameConfig.hexExtrusionHeight * up),
-          base - Offset(0, tentTop * up),
-        );
+        _buildAnchor = anchor;
       });
       await _buildAnim.forward(from: 0).orCancel.catchError((_) {});
     } catch (_) {
@@ -366,6 +477,34 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         await map.setGeoJsonSource(_buildSource, HexService.collection([]));
       } catch (_) {}
     }
+  }
+
+  /// Hücredeki yapının ekran konumu (mantıksal piksel): blok tepesi ve çadır
+  /// tepesi. Zemin noktası + yüksekliğin eğik kameradaki izdüşümü (yaklaşık).
+  /// Android piksel döner → mantıksal piksele çevrilir.
+  Future<(Offset ground, Offset top)?> _screenAnchor(String cell) async {
+    final map = _map;
+    if (map == null) return null;
+    final c = _hex.center(cell);
+    final p = await map.toScreenLocation(LatLng(c[1], c[0]));
+    if (!mounted) return null;
+    final s = Platform.isAndroid ? MediaQuery.devicePixelRatioOf(context) : 1.0;
+    final cam = map.cameraPosition;
+    final zoom = cam?.zoom ?? GameConfig.buildFocusZoom;
+    final tilt = (cam?.tilt ?? GameConfig.mapTilt) * math.pi / 180;
+    final mpp =
+        40075016.686 *
+        math.cos(c[1] * math.pi / 180) /
+        (512 * math.pow(2, zoom));
+    final up = math.sin(tilt) / mpp;
+    final base = Offset(p.x / s, p.y / s);
+    final tentTop =
+        GameConfig.hexExtrusionHeight +
+        GameConfig.tentHeight * _tent.radius(cell);
+    return (
+      base - Offset(0, GameConfig.hexExtrusionHeight * up),
+      base - Offset(0, tentTop * up),
+    );
   }
 
   /// 3D altıgen katmanının tüm özellikleri. `setLayerProperties` null
@@ -712,6 +851,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   /// Kendi hücreme dokununca alttan çıkan kart: yapı yoksa "Çadır kur",
   /// varsa yapı bilgisi. Fiyat gösterim içindir; kararı sunucu verir.
+  String _incomeLine(String cell, int level) {
+    final i = _income[cell];
+    if (i == null) return 'Seviye $level • Bu bölge senin';
+    return 'Seviye $level • Kasa ${i.pending} / ${i.cap}'
+        '${i.isFull ? ' • Dolu!' : ''}';
+  }
+
   Widget _buildCard(String cell) {
     final text = Theme.of(context).textTheme;
     final level = _owned[cell]?.level ?? 0;
@@ -739,7 +885,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               const SizedBox(height: 4),
               Text(
                 level >= 1
-                    ? 'Seviye $level • Bu bölge senin'
+                    ? _incomeLine(cell, level)
                     : 'İlk yapın bölgeni süsler.',
                 style: text.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700,
@@ -825,6 +971,34 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
+  /// "Topla • X" çipi; bir kasa doluysa şeftaliyle vurgulanır.
+  Widget _collectChip() {
+    final full = _income.values.any((i) => i.isFull);
+    return ElevatedButton.icon(
+      key: _collectKey,
+      style: AppTheme.goldButton.copyWith(
+        backgroundColor: WidgetStatePropertyAll(
+          full ? AppColors.accentPeach : AppColors.accentButter,
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        ),
+        minimumSize: const WidgetStatePropertyAll(Size(0, 36)),
+      ),
+      onPressed: _collectBusy ? null : _collect,
+      icon: _collectBusy
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.savings_rounded, size: 18),
+      label: Text(
+        full ? 'Kasa dolu! Topla • $_pendingTotal' : 'Topla • $_pendingTotal',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ready = _state == _LocState.ready;
@@ -884,11 +1058,33 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: _CoinCounter(
-                    coins: _balance!.coins,
-                    reduceMotion: MediaQuery.of(context).disableAnimations,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CoinCounter(
+                        key: _counterKey,
+                        coins: _balance!.coins,
+                        reduceMotion: MediaQuery.of(context).disableAnimations,
+                      ),
+                      if (_pendingTotal > 0 || _collectBusy) ...[
+                        const SizedBox(height: 6),
+                        _collectChip(),
+                      ],
+                    ],
                   ),
                 ),
+              ),
+            ),
+          if (_collectTarget != null)
+            CollectCelebration(
+              progress: _collectAnim,
+              coins: _flyCoins,
+              target: _collectTarget!,
+              total: _collectTotal,
+              onSkip: () => _collectAnim.animateTo(
+                1,
+                duration: const Duration(milliseconds: 80),
               ),
             ),
           if (_celebrating)
@@ -930,7 +1126,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 /// Altın sayacı (sol üst): tereyağı sarısı kart. Değer değişince sayarak
 /// gider ve hafifçe sıçrar (plan 14.1-C "kasa" hissi).
 class _CoinCounter extends StatelessWidget {
-  const _CoinCounter({required this.coins, required this.reduceMotion});
+  const _CoinCounter({
+    super.key,
+    required this.coins,
+    required this.reduceMotion,
+  });
 
   final int coins;
   final bool reduceMotion;

@@ -37,6 +37,10 @@ abstract final class AppColors {
   static const tentPole = Color(0xFFA07856);
   static const tentKnob = accentButter;
 
+  /// Adım 2.3: uçan sikke (tereyağı yüz, sıcak bal kenar).
+  static const coinFace = accentButter;
+  static const coinRim = Color(0xFFF5C26B);
+
   /// Başka oyuncuların bölgeleri (kendi rengimle karışmasın diye primary yok).
   static const otherPlayerPalette = <Color>[
     secondary,

@@ -91,6 +91,24 @@ abstract final class GameConfig {
   static const buildDustPuffs = 9;
   static const buildDustPuffsLite = 4;
 
+  /// Adım 2.3: gelir. Kasa sunucudan bu aralıkla (sn) yeniden sorulur
+  /// (oran/tavan sunucudaki `income_per_hour_<seviye>` / `income_cap_hours`).
+  static const incomePollSec = 60;
+
+  /// Toplama animasyonu: toplam süre (ms), uçan sikke sayısı (tüm yapılar
+  /// için; düşük donanımda azı), sikkeler arası gecikme oranı ve yay yüksekliği.
+  static const collectAnimMs = 1300;
+  static const collectCoins = 14;
+  static const collectCoinsLite = 5;
+  static const collectStagger = 0.35;
+  static const collectArc = 90.0;
+
+  /// Toplama sesi; tekrarlarda ton bu aralıkta hafifçe değişir (plan 14.1-D).
+  static const collectSoundAsset = 'audio/collect.wav';
+  static const collectPitchJitter = 0.06;
+  static const collectVibrateMs = 30;
+  static const collectVibrateAmplitude = 90;
+
   /// Ayarlar ekranı gelene kadar sabit: ses / titreşim açık mı.
   static const hapticsEnabled = true;
   static const soundEnabled = true;

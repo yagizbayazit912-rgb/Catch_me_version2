@@ -78,3 +78,9 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Test altını:** Altın kazanma yolu (2.3 gelir) gelene kadar `supabase/tests/grant_test_coins.sql` ile elle verilir (`dev_grant` kaydı). İstemciye altın üreten RPC açılmadı.
 - **Blok yüksekliği** şimdilik seviyeden bağımsız (40 m); plan 14.1-A "seviyeyle artar" diyor, 2.4'te ele alınacak.
 - **Çadır dokusu ertelendi:** `fill-extrusion-pattern` ile kanvas/tahta dokusu mümkün (renk+desen aynı parçada olmaz), sprite daha gerçekçi ama 3D'ye oturmaz. Kullanıcı mevcut düz renkli görünümü onayladı; cila turunda tekrar bakılabilir.
+
+## Adım 2.3 (gelir)
+- **Topla = tüm yapılar birden** (sayacın altındaki çip). Hücre başı toplama yok; kartta sadece kasa bilgisi. Sikkeler ekrandaki yapılardan uçar, ekranda yapı yoksa çipten.
+- **Konum şartı yok:** Gelir her yerden toplanır (günlük dönüş için).
+- **Tavan aşınca fazlası yanar**; sayaç toplama anına çekilir. Kesirli gelir korunur.
+- **Kasa periyodik okunur** (`incomePollSec` = 60 sn), istemci kendisi saymaz; oran/tavan sadece sunucu config'inde.
