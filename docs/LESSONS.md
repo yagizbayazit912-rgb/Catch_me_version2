@@ -42,7 +42,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-09] Adım 2.1 — Altın bakiyesi + transactions
 ✅ İyi giden: Migration `20261009000000_transactions.sql`: `transactions` (user, type, amount işaretli, currency coins|gems, balance_after, ref_id) + RLS (sadece kendi satırını okur, yazma yok). Tek giriş noktası `apply_transaction` (security definer, sadece service_role): kullanıcı satırını kilitler, bakiye+kayıt aynı işlemde, yetersiz bakiyede `insufficient_funds` (negatif bakiye yok). `users.coins/gems` 0.6'dan zaten vardı. SQL Editor testi `supabase/tests/transactions.sql` (kazanç/harcama/yetersiz/tutarlılık/RLS/anon/fonksiyon çağıramama). İstemci: `WalletRepository` + haritada salt okunur altın sayacı (sol üst). `flutter analyze` temiz, test geçti.
-❌ Hata / sorun: Migration ve SQL testi Supabase'de **henüz çalıştırılmadı**; yerelde Postgres yok. Altın kazandıran/harcatan bir özellik henüz yok (2.2+), bu yüzden sayaç şimdilik 0.
+✅ Kullanıcı Supabase'de migration + SQL testini çalıştırdı, hata vermedi; cihazda altın sayacı 0 gösteriyor. ❌ Hata / sorun: Yerelde Postgres yok. Altın kazandıran/harcatan bir özellik henüz yok (2.2+), bu yüzden sayaç şimdilik 0.
 📌 Çıkarılan kural: —
 
 ### [2026-10-09] Adım 1.6 — Yürüyüş modu

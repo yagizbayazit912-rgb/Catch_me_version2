@@ -367,7 +367,7 @@ seasons          (id, name, starts_at, ends_at)
 - [x] Yürüyüş modu (Adım 1.6) — kod hazır, cihaz testi bekliyor
 
 ### 🟡 Faz 2 — Ekonomi ve Yapılar (2–3 hafta)
-- [x] Altın bakiyesi, `transactions` altyapısı (Adım 2.1) — migration/test Supabase'de bekliyor
+- [x] Altın bakiyesi, `transactions` altyapısı (Adım 2.1)
 - [ ] Çadır → Ev → Otel → Gökdelen inşa/yükseltme
 - [ ] Yapı inşa ve yükseltme animasyonları (bölüm 14.1-C)
 - [ ] Gelir toplama animasyonu (sikkeler sayaca uçar)
