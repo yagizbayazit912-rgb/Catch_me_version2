@@ -46,6 +46,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ❌ Cihazda: kendi bloğuna dokununca kart açılmadı → `maplibre_gl`'de `add*Layer` varsayılan `enableInteraction: true`; etkileşimli katmandaki parçaya dokunma `onMapClick` yerine `onFeatureTapped`'i tetikler. İkisi de aynı işleyiciye bağlandı.
 🔁 Kullanıcı geri bildirimi → görünüm yenilendi: 14 basamak çan profili (taban geniş, tepe sivri, uçlar içe eğik), kalın krem/şeftali çizgi, lavanta kilim, kakao üçgen kapı + açık şeftali toplanmış kanatlar, ahşap direk + sarı topuz, incelen flama; çadır paleti `AppColors.tent*`. Çadır katmanında vertical gradient kapalı (ince basamaklarda şeritlenme). Ayrı inşa sesi `assets/audio/build.wav` (`tools/make_build_sound.py` ile sentez: puf + tok + marimba Mi6→La6) ve çift vuruş titreşim.
 🔁 Geri bildirim 2: lavanta kilim kaldırıldı. Gölge artık çadır şeklinden: her yükseklikteki kesit, yüksekliğiyle orantılı sağ alta kaydırılıp zemine yansıtılır, dışbükey zarfı alınır (+ direğin ince gölgesi). Gölge boyu `tentShadowLength`.
+🔁 Geri bildirim 3: flama artık çadır yönünden bağımsız hep sağa (doğuya) bakar; flamanın da üçgen gölgesi var (parça köşeleri kendi yüksekliğiyle yansıtılıp zarfı alınır).
 📌 Çıkarılan kural: maplibre_gl'de katman üstüne dokunma için `onMapClick` yetmez; `onFeatureTapped` da dinlenir. Haritaya "oturması" gereken nesneler ikon değil metre ölçülü geometri ile çizilir; animasyonlu olan ayrı küçük katmanda.
 
 ### [2026-10-09] Adım 2.1 — Altın bakiyesi + transactions

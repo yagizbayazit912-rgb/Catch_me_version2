@@ -68,9 +68,23 @@ class TentModel {
       [dx * k * z0 + dy * pw, dy * k * z0 - dx * pw],
     ];
 
+    // Flama: her parçanın alt/üst köşeleri kendi yüksekliğiyle kaydırılır;
+    // üçgen bir gölge düşer.
+    final flagPts = <List<double>>[];
+    for (final g in s.pennant()) {
+      for (final x in [g.x0, g.x1]) {
+        for (final z in [g.zLo, g.zHi]) {
+          for (final y in [-g.t, g.t]) {
+            flagPts.add([x + dx * k * z, y + dy * k * z]);
+          }
+        }
+      }
+    }
+
     return [
       _feature(h3, f.ring(body), AppColors.text, 0, 0.3),
       _feature(h3, f.ring(pole), AppColors.text, 0, 0.3),
+      _feature(h3, f.ring(_hull(flagPts)), AppColors.text, 0, 0.3),
     ];
   }();
 
@@ -156,20 +170,21 @@ class TentModel {
       ),
     );
 
-    // Flama: direkten uzaklaştıkça incelen parçalar, sahibin renginde.
-    const segs = GameConfig.tentPennantSegments;
-    final segLen = 0.13 * r / segs;
-    final mid = height * 1.34;
-    final half0 = height * 0.1;
-    for (var i = 0; i < segs; i++) {
-      final hh = half0 * (1 - 0.8 * i / segs);
+    // Flama: her çadırda aynı yöne (sağa / doğuya) bakar, direkten
+    // uzaklaştıkça incelir, sahibin renginde.
+    for (final g in s.pennant()) {
       out.add(
         _feature(
           h3,
-          f.rect(pole + segLen * (i + 0.5), 0, segLen / 2, pole * 0.7),
+          f.ring([
+            [g.x0, -g.t],
+            [g.x1, -g.t],
+            [g.x1, g.t],
+            [g.x0, g.t],
+          ]),
           flag,
-          mid - hh,
-          mid + hh,
+          g.zLo,
+          g.zHi,
         ),
       );
     }
@@ -195,12 +210,32 @@ class TentModel {
 /// Çadır profili: p (0 taban → 1 tepe) yüksekliğinde yarım genişlik ve ön
 /// yüzün konumu. Çan eğrisi: taban geniş, tepe sivri; uçlar hafif içe eğik.
 class _Shape {
-  _Shape(double r)
+  _Shape(this.r)
     : halfW = GameConfig.tentHalfWidth * r,
       halfL = GameConfig.tentHalfLength * r,
       height = GameConfig.tentHeight * r;
 
-  final double halfW, halfL, height;
+  final double r, halfW, halfL, height;
+
+  /// Flama parçaları, dünya metresinde (x doğu): direğin hemen sağından
+  /// başlar, uca doğru dikey boyu azalır. [t] yarım kalınlık (kuzey-güney).
+  List<({double x0, double x1, double zLo, double zHi, double t})> pennant() {
+    const segs = GameConfig.tentPennantSegments;
+    final pole = 0.010 * r;
+    final segLen = 0.13 * r / segs;
+    final mid = height * 1.34;
+    final half0 = height * 0.1;
+    return [
+      for (var i = 0; i < segs; i++)
+        (
+          x0: pole + segLen * i,
+          x1: pole + segLen * (i + 1),
+          zLo: mid - half0 * (1 - 0.8 * i / segs),
+          zHi: mid + half0 * (1 - 0.8 * i / segs),
+          t: pole * 0.7,
+        ),
+    ];
+  }
 
   double widthAt(double p) =>
       halfW * math.pow(1 - p, GameConfig.tentBellExp).toDouble();
