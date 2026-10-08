@@ -42,8 +42,8 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-09] Adım 1.6 — Yürüyüş modu
 ✅ İyi giden: `WalkController` (ayrı dosya) geolocator'ın `getPositionStream` + `foregroundNotificationConfig` ile foreground service ve "Catch Me aktif" bildirimini açar; her 15 sn'de bir mevcut `location-ping`'e yollar (yeni sunucu kodu yok). >25 km/s (2 ardışık okuma) → ping atmadan duraklar, 2 yavaş okumada devam. Bildirim izni için `permission_handler`. Eşikler/metinler `GameConfig`'te. Geçici "Ping gönder" ve "Claim animasyonu dene" çipleri kalktı; claim kutlaması artık yürüyüş ping'inden tetiklenir. `flutter analyze` temiz, test geçti.
-❌ Hata / sorun: **Cihazda henüz doğrulanmadı** (ekran kapalı 10 dk yürüyüş, bildirim, durdurma). Android 13+ bildirim izni reddedilirse servis çalışır ama bildirim görünmeyebilir (durum satırı uyarır).
-📌 Çıkarılan kural: —
+❌ Hata / sorun: Durdurunca bildirim gitmedi. Sebep: `enableWakeLock: true` ama manifest'te `WAKE_LOCK` izni yoktu → eklenti `SecurityException` ("Failed to open event stream") ile akışı düzgün açamadı, servis kapanmadı. `WAKE_LOCK` eklenince çözüldü (cihazda doğrulandı: başlat/durdur, bildirim gidiyor). Ekran kapalı 10 dk yürüyüş testi **henüz yapılmadı**. Android 13+ bildirim izni reddedilirse bildirim görünmeyebilir (durum satırı uyarır).
+📌 Çıkarılan kural: Eklenti izin hatası sessiz kalabilir; "çalışıyor ama durmuyor" tipi hatada önce `adb logcat -d` ile `SecurityException` ara. Bildirim/servis özelliği açılınca gereken manifest izinleri aynı adımda eklenir.
 
 ### [2026-10-01] Adım 1.5 — Temel hile kontrolleri
 ✅ İyi giden: Mevcut 1.1 filtreleri korundu, eşikleri `game_config`'e taşındı (`ping_guard` RPC tek çağrıda eşik + aktif askı döner, eşik eksikse 500 = kapalı başarısız). Yeni: `anticheat_events` (sadece h3, koordinat yok) + `user_risk`, `record_violation` pencerede 3 ihlalde 15 dk askı. İhlal: mock bildirimi, doğruluk <1 m, >90 m/s; 30–90 m/s sadece ret. Ret edilen ping `accrue_presence`'a hiç ulaşmaz. İstemci çipi Türkçe neden + askı bitiş saati gösteriyor. `flutter analyze` temiz, test geçti.
