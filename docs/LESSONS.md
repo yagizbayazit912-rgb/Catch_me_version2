@@ -42,7 +42,7 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 
 ### [2026-10-09] Adım 2.3 — Gelir birikimi + "topla"
 ✅ İyi giden: Migration `20261009020000_income.sql`: `hexes.income_at`, config `income_per_hour_1=5`, `income_cap_hours=8`. Gelir sunucuda zamandan hesaplanır (`income_state`, çevrimdışı birikir, tavan 8 sa). `my_income()` kasaları döner; `collect_income()` hücreleri kilitler, tam sikkeleri `apply_transaction('income')` ile tek kayıtta verir. Kesir kaybolmaz (sayaç verilen sikke kadar ilerler), tavan dolduysa şimdiye çekilir. SQL testi `supabase/tests/income.sql`. İstemci: sayacın altında "Topla • X" çipi (60 sn'de bir yenilenir, kasa doluysa şeftali), kartta "Kasa p / tavan". Animasyon `income_celebration.dart`: sikkeler görünür çadırlardan zıplayıp yay çizerek sayaca uçar, ilk sikke varınca sayaç sayar; "+X" etiketi dokununca atlar, hareketi azalt → anında bakiye. Yeni ses `collect.wav` (`tools/make_collect_sound.py`), her çalışta ton ±%6. Ekran izdüşümü `_screenAnchor` olarak ortaklaştırıldı. `flutter analyze` temiz, test geçti.
-❌ Hata / sorun: Cihazda ve Supabase'de **henüz denenmedi** (migration + `income.sql` kullanıcıda). Kasa istemcide canlı saymıyor, 60 sn'de bir sunucudan gelir.
+✅ Kullanıcı migration'ı çalıştırdı, cihazda toplama + uçan sikke animasyonu doğru çalıştı. ❌ Hata / sorun: Kasa istemcide canlı saymıyor, 60 sn'de bir sunucudan gelir.
 📌 Çıkarılan kural: Zamanla biriken değer sunucuda `now() - başlangıç`tan hesaplanır, cron gerekmez; toplarken başlangıç sadece verilen tam birim kadar ilerletilir (kesir korunur).
 
 ### [2026-10-09] Adım 2.2 — Çadır inşası + inşa animasyonu
