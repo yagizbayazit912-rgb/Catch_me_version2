@@ -3,9 +3,10 @@
 -- Yapı tipi seviyeden türer. İnşa kararı ve ödeme sunucuda, tek işlemde:
 -- sahiplik + seviye kontrolü + apply_transaction (yetersizse hiçbir şey değişmez).
 
+-- Tekrar çalıştırılabilir (yarım kalan çalıştırmadan sonra güvenli).
 alter table public.hexes
-  add column level    smallint not null default 0 check (level between 0 and 4),
-  add column built_at timestamptz;
+  add column if not exists level    smallint not null default 0 check (level between 0 and 4),
+  add column if not exists built_at timestamptz;
 
 insert into public.game_config (key, value) values
   ('build_cost_1', '100')   -- çadır (plan bölüm 6, dengelemede değişebilir)

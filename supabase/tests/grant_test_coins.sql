@@ -3,6 +3,6 @@
 -- E-postayı kendi giriş e-postanla değiştir, SQL Editor'de çalıştır.
 
 select public.apply_transaction(
-  (select id from auth.users where email = 'BURAYA_EPOSTA'),
+  (select id from auth.users where email = 'yagizbayazit912@gmail.com'),
   'dev_grant', 500, 'coins', null
 ) as yeni_bakiye;
