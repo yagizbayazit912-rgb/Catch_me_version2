@@ -19,6 +19,7 @@ import 'build_celebration.dart';
 import 'claim_celebration.dart';
 import 'building_model.dart';
 import 'income_celebration.dart';
+import 'presence_progress.dart';
 import 'tent_model.dart';
 import 'walk_controller.dart';
 
@@ -42,6 +43,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   static const _hexSource = 'hex-src';
   static const _hexFill = 'hex-fill';
   static const _hexLine = 'hex-line';
+  // Sahiplenme ilerlemesi (bulunduğum altıgen, zeminde).
+  static const _progressSource = 'progress-src';
+  static const _progressFill = 'progress-fill';
+  static const _progressLine = 'progress-line';
   // Adım 1.4: görünür alandaki sahipli altıgenler (sabit yükseklikte bloklar).
   static const _ownedSource = 'owned-src';
   static const _ownedLayer = 'owned-layer';
@@ -117,8 +122,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   bool _ownedAgain = false;
   late final WalkController _walk = WalkController(_ping, onPing: _onWalkPing)
     ..addListener(() {
+      if (!_walk.running) _clearPresence();
       if (mounted) setState(() {});
     });
+
+  /// Sahiplenme ilerlemesi: son sunucu cevabı (altıgen, birikmiş/gereken
+  /// sn, zamanı). Pingler arası istemci süreyi ileri sayar (sadece gösterim).
+  late final _progress = PresenceProgress(_hex);
+  String? _presenceCell;
+  int _presenceAcc = 0;
+  int _presenceReq = 0;
+  DateTime _presenceAt = DateTime.now();
+  Timer? _presenceTimer;
+  double _presenceShown = -1;
   bool _celebrating = false;
   late final AnimationController _rise = AnimationController(
     vsync: this,
@@ -266,6 +282,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     _buildAnim.dispose();
     _collectAnim.dispose();
     _incomeTimer?.cancel();
+    _presenceTimer?.cancel();
     super.dispose();
   }
 
@@ -850,6 +867,27 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         lineOpacity: 0.8,
       ),
     );
+    await map.addGeoJsonSource(_progressSource, _progressCollection());
+    await map.addFillLayer(
+      _progressSource,
+      _progressFill,
+      FillLayerProperties(
+        fillColor: _hexColor(AppColors.claimProgressFill),
+        fillOpacity: 0.45,
+      ),
+      filter: ['==', 'kind', 'ring'],
+    );
+    await map.addLineLayer(
+      _progressSource,
+      _progressLine,
+      LineLayerProperties(
+        lineColor: _hexColor(AppColors.claimProgressLine),
+        lineWidth: 5.0,
+        lineCap: 'round',
+        lineJoin: 'round',
+      ),
+      filter: ['==', 'kind', 'trace'],
+    );
     await map.addGeoJsonSource(_ownedSource, _ownedCollection());
     await map.addFillExtrusionLayer(
       _ownedSource,
@@ -1007,9 +1045,125 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  /// Yürüyüş modundan gelen her sunucu cevabı: claim olduysa kutlama.
+  /// Yürüyüş modundan gelen her sunucu cevabı: claim olduysa kutlama;
+  /// birikiyorsa ilerleme güncellenir (sahipli/kendi altıgende gizlenir).
   void _onWalkPing(PingResult res) {
-    if (mounted && res.ok && res.claimed) _celebrateClaim(res.h3);
+    if (!mounted || !res.ok) return;
+    if (res.claimed) {
+      _clearPresence();
+      _celebrateClaim(res.h3);
+      return;
+    }
+    final acc = res.accumulated, req = res.required;
+    if (res.presenceStatus == 'accruing' &&
+        acc != null &&
+        req != null &&
+        req > 0) {
+      _presenceCell = res.h3;
+      _presenceAcc = acc;
+      _presenceReq = req;
+      _presenceAt = DateTime.now();
+      _presenceTimer ??= Timer.periodic(
+        const Duration(milliseconds: GameConfig.presenceTickMs),
+        (_) => _tickPresence(),
+      );
+      _tickPresence();
+    } else if (res.countsForPresence != false) {
+      // Kendi/başkasının altıgeni: gösterecek ilerleme yok. (Hızlıyken
+      // sunucu saymaz ama son ilerleme ekranda kalır.)
+      _clearPresence();
+    }
+  }
+
+  /// Gösterilen birikmiş süre (sn): son sunucu değeri + o andan beri geçen
+  /// (yürüyüş açık ve hızlı değilken, sınırlı tahmin).
+  double get _presenceNow {
+    var s = _presenceAcc.toDouble();
+    if (_walk.state == WalkState.active) {
+      final dt = DateTime.now().difference(_presenceAt).inMilliseconds / 1000;
+      s += dt.clamp(0, GameConfig.presenceMaxExtrapolateSec);
+    }
+    return s;
+  }
+
+  /// Sahiplik limiti dolu: süre dolmuş ama sunucu almadı.
+  bool get _presenceBlocked =>
+      _presenceCell != null && _presenceAcc >= _presenceReq;
+
+  void _tickPresence() {
+    if (_presenceCell == null || !mounted) return;
+    final p = (_presenceNow / _presenceReq).clamp(0.0, 1.0);
+    if ((p - _presenceShown).abs() < 0.002) return;
+    _presenceShown = p;
+    setState(() {});
+    _renderProgress();
+  }
+
+  void _clearPresence() {
+    _presenceTimer?.cancel();
+    _presenceTimer = null;
+    if (_presenceCell == null) return;
+    _presenceCell = null;
+    _presenceShown = -1;
+    _renderProgress();
+    if (mounted) setState(() {});
+  }
+
+  Map<String, dynamic> _progressCollection() {
+    final cell = _presenceCell;
+    if (cell == null || _owned[cell] != null) return HexService.collection([]);
+    return _progress.collection(cell, _presenceShown);
+  }
+
+  Future<void> _renderProgress() async {
+    final map = _map;
+    if (map == null || !_hexDrawn) return;
+    try {
+      await map.setGeoJsonSource(_progressSource, _progressCollection());
+    } catch (_) {}
+  }
+
+  /// Alt panelde ilerleme kartı: kalan süre + bar (veya limit uyarısı).
+  Widget _presenceCard() {
+    final text = Theme.of(context).textTheme;
+    final blocked = _presenceBlocked;
+    final p = _presenceShown.clamp(0.0, 1.0);
+    final left = (_presenceReq - _presenceNow).clamp(0, _presenceReq).ceil();
+    final mm = left ~/ 60, ss = (left % 60).toString().padLeft(2, '0');
+    final label = blocked
+        ? 'Bölge limitin dolu'
+        : _walk.state == WalkState.pausedFast
+        ? 'Bölge alınıyor • duraklatıldı'
+        : 'Bölge alınıyor • $mm:$ss kaldı';
+    return Container(
+      width: 240,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: p,
+              minHeight: 8,
+              backgroundColor: AppColors.background,
+              color: blocked ? AppColors.warning : AppColors.claimProgressLine,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Yürüyüş modu başlat/durdur butonu + durum göstergesi (açık/duraklı/kapalı).
@@ -1025,12 +1179,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       WalkState.active => (
         'Yürüyüş açık • durdur',
         Icons.stop_circle_rounded,
-        AppColors.ownHex,
+        AppColors.surface,
       ),
       WalkState.pausedFast => (
         'Duraklatıldı (hızlısın) • durdur',
         Icons.pause_circle_rounded,
-        AppColors.secondary,
+        AppColors.surface,
       ),
     };
     final note = _walk.status;
@@ -1042,6 +1196,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_presenceCell != null && _walk.running) _presenceCard(),
               if (note != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -1056,7 +1211,17 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   child: Text(note),
                 ),
               ElevatedButton.icon(
-                style: AppTheme.confirmButton,
+                // Açıkken kırmızı: "durdur" olduğu bir bakışta belli olsun.
+                style: _walk.running
+                    ? AppTheme.confirmButton.copyWith(
+                        backgroundColor: const WidgetStatePropertyAll(
+                          AppColors.danger,
+                        ),
+                        foregroundColor: const WidgetStatePropertyAll(
+                          AppColors.surface,
+                        ),
+                      )
+                    : AppTheme.confirmButton,
                 onPressed: s == WalkState.starting
                     ? null
                     : (_walk.running ? _walk.stop : _walk.start),

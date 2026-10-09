@@ -78,6 +78,10 @@ abstract final class AppColors {
   static const skyGlow = Color(0xFFC9B6FF);
   static const skyBeacon = Color(0xFFFF5C7C);
 
+  /// Sahiplenme ilerlemesi: altıgende içe dolan bant + kenar çizgisi.
+  static const claimProgressFill = primary;
+  static const claimProgressLine = Color(0xFF2FB383);
+
   /// Adım 2.3: uçan sikke (tereyağı yüz, sıcak bal kenar).
   static const coinFace = accentButter;
   static const coinRim = Color(0xFFF5C26B);

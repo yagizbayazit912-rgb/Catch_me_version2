@@ -50,6 +50,14 @@ abstract final class GameConfig {
 
   /// Bundan eski okuma gönderilmez (sunucu `ping_max_age_s` daha geniş).
   static const walkMaxFixAgeSec = 30;
+
+  /// Sahiplenme ilerlemesi: ekran/harita bu aralıkla (ms) güncellenir;
+  /// pingler arası süre istemcide en fazla bu kadar (sn) ileri tahmin edilir
+  /// (sunucu ping aralığını 60 sn'ye kadar sayar; asıl değer her ping'te
+  /// sunucudan gelir).
+  static const presenceTickMs = 500;
+  static const presenceMaxExtrapolateSec = 30;
+
   static const walkNotificationTitle = 'Catch Me aktif';
   static const walkNotificationText = 'Yürüyüşün takip ediliyor';
 

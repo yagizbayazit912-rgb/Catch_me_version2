@@ -10,6 +10,8 @@ class PingResult {
     this.speedMps,
     this.countsForPresence,
     this.presenceStatus,
+    this.accumulated,
+    this.required,
     this.suspendedUntil,
   });
 
@@ -21,6 +23,10 @@ class PingResult {
 
   /// Sunucunun presence kararı: accruing / claimed / owned / owned_by_other.
   final String? presenceStatus;
+
+  /// Bu altıgende birikmiş ve sahiplenme için gereken süre (sn).
+  final int? accumulated;
+  final int? required;
 
   /// Hile kontrolü askısı (1.5): bu zamana kadar ping'ler reddedilir.
   final DateTime? suspendedUntil;
@@ -45,6 +51,8 @@ class PingResult {
     speedMps: (j['speed_mps'] as num?)?.toDouble(),
     countsForPresence: j['counts_for_presence'] as bool?,
     presenceStatus: (j['presence'] as Map?)?['status'] as String?,
+    accumulated: ((j['presence'] as Map?)?['accumulated'] as num?)?.toInt(),
+    required: ((j['presence'] as Map?)?['required'] as num?)?.toInt(),
     suspendedUntil: DateTime.tryParse(
       j['suspended_until'] as String? ?? '',
     )?.toLocal(),
