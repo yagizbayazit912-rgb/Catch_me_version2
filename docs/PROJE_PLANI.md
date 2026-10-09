@@ -521,11 +521,11 @@ Her adımın "bitti sayılır" ölçütü vardır. Agent o ölçüt sağlanınca
 | 2.4 | Ev / Otel / Gökdelen + yükseltme animasyonları (seviye 2–4, altınla; ileride GP ile de) | Dört seviye de inşa/yükseltilebiliyor |
 | 2.5 | Kira mekaniği (cooldown, tavan, yeni oyuncu koruması) | Başkasının bölgesine girince kira işliyor |
 
-### Mini oyun fazı (TASLAK: M.0 prototipi sevilirse uygulanır)
+### Mini oyun fazı (ZORUNLU — oyunun mihenk taşı; karar 2026-10-10)
 Karar ayrıntıları: `docs/DECISIONS.md` → "Mini oyun ve seviye sistemi". Numaralar Faz 3 ile çakışmasın diye `M` önekli; Faz 2 sırasından bağımsız, 2.1–2.5 mini oyuna bağlı değil (yalnızca `level` alanı ortak).
 | Adım | İş | Bitti sayılır |
 |---|---|---|
-| M.0 | Hex Merge prototipi (projeden bağımsız tek sayfa): birleşme kuralı, karo olasılığı, tahta boyutu, combo ve "bir tur daha" hissi denenir | Kullanıcı oynayıp oyunu sevdiğini ve kuralları onayladığını söylüyor; kurallar kısa bir kural belgesine yazılıyor |
+| M.0 | Hex Merge prototipi (projeden bağımsız tek sayfa): birleşme kuralı, karo olasılığı, tahta boyutu, combo ve "bir tur daha" hissi denenir. Eğlenceli olana kadar yinelenir; Hex Merge tutmazsa başka mekanik denenir, mini oyun çıkarılmaz | Kullanıcı oynayıp oyunu sevdiğini ve kuralları onayladığını söylüyor; kurallar kısa bir kural belgesine yazılıyor |
 | M.1 | Dart motoru: tahta, birleşme, skor, seed'li PRNG (UI yok) + birim testleri | `flutter test` geçiyor |
 | M.2 | TypeScript motoru (Edge Function için) + ortak altın replay test vektörleri | Aynı replay Dart ve TS'te aynı skoru veriyor; yerelde Deno/Node ile çalışıyor |
 | M.3 | Tahta ekranı (`CustomPainter`, tema, haptik/ses/partikül, yedek mod) + antrenman modu (sunucusuz) | Cihazda oynanıyor, akıcı, atlanabilir animasyonlar |

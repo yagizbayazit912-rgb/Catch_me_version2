@@ -50,7 +50,8 @@
 - iOS mock tespiti (sadece hız/sıçrama) iOS'a geçerken tekrar ele alınacak.
 
 ## Mini oyun ve seviye sistemi (tasarım kararı, 2026-10-08; kod yok)
-Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun fazı", M.0–M.5). Prototip sevilmezse bu bölümün sadece "Seviye = yapı" kısmı geçerli kalır.
+Durum: **ZORUNLU (kullanıcı kararı, 2026-10-10): mini oyun oyunun mihenk taşı, eğlenceli olması şart.** (PROJE_PLANI "Mini oyun fazı", M.0–M.5). M.0 prototipi "sevilirse uygula" değil, "eğlenceli olana kadar yinele" kapısıdır; Hex Merge tutmazsa başka mekanik denenir, mini oyun çıkarılmaz.
+- **Neden:** Yeni oyuncu ilk açılışta tamamı sahipli bir alandaysa (okul, AVM çevresi) yapacak bir şeyi olmalı, yoksa sıkılıp siler. Başkasının bölgesinde meydan okuma + konumsuz antrenman modu bu "soğuk başlangıç" sorununun ana çözümü.
 - **Hibrit sahiplenme:** Sahipsiz hücre = kısa presence ile claim (mevcut mekanik, süre config). Başkasının hücresi = skorlu **meydan okuma** (sahibin savunma skorunu geçen devralır, beraberlikte sahip). Kendi hücre = **sınırsız "Geliştirme"** oyunu. Zamanı beklemek çekirdek mekanik olmaktan çıkar, sadece pasif gelir kalır.
 - **Mini oyun: Hex Merge.** 19 hücreli (yarıçap 2) altıgen tahta, sıradaki karo seed'den gelir, bağlı aynı sayılar birleşir, zincir/combo çarpanı, tahta dolunca biter. Skor combo ve süre etkenlerini zaten içerir. Replay = sadece hücre indeksi listesi. Birleşme kuralı (2+ bağlı mı, 3+ mı) prototipte denenip seçilecek.
 - **Adil seed:** Aynı hücre + aynı gün = aynı seed (sunucudan). İkinci denemede öğrenme/ustalık hissi.
