@@ -37,20 +37,43 @@ abstract final class AppColors {
   static const tentPole = Color(0xFFA07856);
   static const tentKnob = accentButter;
 
-  /// Adım 2.4: ev (krem duvar, mercan çatı), otel (açık lavanta, koyu
-  /// lavanta çatı, şeftali tente), gökdelen (gök camı + beyaz kat bantları).
-  /// Yanan pencereler tereyağı sarısı.
-  static const houseWall = Color(0xFFFFF7EC);
-  static const houseBase = Color(0xFFE9DCCB);
-  static const houseRoof = Color(0xFFFF9F8E);
-  static const houseChimney = Color(0xFFC98B74);
-  static const windowLit = accentButter;
-  static const hotelWall = Color(0xFFEDE6FF);
-  static const hotelTrim = Color(0xFFA996E6);
-  static const hotelAwning = accentPeach;
-  static const skyGlass = Color(0xFFB5DDF8);
-  static const skyBand = surface;
-  static const skySpire = Color(0xFFB8C4CC);
+  /// Adım 2.4: yapılar. Pastel tabanda daha doygun vurgular: her seviye bir
+  /// öncekinden daha zengin. Ortak: yanan pencere sıcak sarı, cam gök mavisi,
+  /// çim/çalı canlı nane.
+  static const windowLit = Color(0xFFFFE27A);
+  static const glass = Color(0xFF6CC4FA);
+  static const lawn = Color(0xFF9BE39A);
+  static const bush = Color(0xFF4FC97F);
+  static const bushLight = Color(0xFF7DDE9C);
+  static const paving = Color(0xFFF4E8D8);
+  static const trimWhite = Color(0xFFFFFFFF);
+  static const poleMetal = Color(0xFFC9D3DA);
+
+  /// Ev: sıcak beyaz duvar, iki tonlu mercan çatı, ahşap kanat, turkuaz kapı.
+  static const houseWall = Color(0xFFFFF8EE);
+  static const houseRoof = Color(0xFFFF6F61);
+  static const houseRoofLight = Color(0xFFFF9180);
+  static const houseWood = Color(0xFFE9A066);
+  static const houseDoor = Color(0xFF2BB8AA);
+  static const houseChimney = Color(0xFFC07A5E);
+
+  /// Otel: beyaz kule, lavanta-mor ve pembe balkonlar, cam lobi, havuz,
+  /// turuncu tente, palmiye.
+  static const hotelWall = Color(0xFFFBF8FF);
+  static const hotelAccent = Color(0xFF9475F2);
+  static const hotelAccent2 = Color(0xFFFF7FAA);
+  static const hotelAwning = Color(0xFFFF9F55);
+  static const pool = Color(0xFF4FD8EA);
+  static const palmTrunk = Color(0xFFB98257);
+
+  /// Gökdelen: yukarı doğru açılan cam tonları, nane köşe şeritleri, ışıklı
+  /// taç, kırmızımsı ikaz ışığı.
+  static const skyGlass = Color(0xFF4EAEF5);
+  static const skyGlassMid = Color(0xFF6DC0FA);
+  static const skyGlassTop = Color(0xFF92D3FF);
+  static const skyBand = trimWhite;
+  static const skyFin = Color(0xFF3FD3B5);
+  static const skyBeacon = Color(0xFFFF5C7C);
 
   /// Adım 2.3: uçan sikke (tereyağı yüz, sıcak bal kenar).
   static const coinFace = accentButter;

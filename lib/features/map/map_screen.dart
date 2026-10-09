@@ -70,13 +70,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   /// Animasyonu oynayan yapının hücresi; sabit katmanda çizilmez.
   String? _buildingCell;
   (Offset ground, Offset top)? _buildAnchor;
-  List<DustPuff> _puffs = const [];
+  BuildFx _fx = BuildFx(1);
 
   /// Kurulum animasyonu: yeni seviye, ödenen, ve yükseltmede eski yapının
   /// yeni yapıyla değiştirildi mi (küçülme bitti).
   int _buildTo = 1;
   int _buildCost = 0;
   bool _buildSwapped = false;
+  bool _finalePlayed = false;
+  int _floorTicks = 0;
   late final AnimationController _buildAnim = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: GameConfig.buildAnimMs),
@@ -469,17 +471,41 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   /// Animasyon karesi. Çadır (0→1): squash & stretch. Yükseltme: önce eski
   /// yapı küçülür (`upgradeShrinkFrac`), sonra kaynak yeni yapıya geçer ve
   /// parçalar sırayla kurulur.
+  /// Yükseltmede eski yapının küçülme payı (animasyon oranı).
+  double get _shrinkFrac =>
+      GameConfig.upgradeShrinkMs / GameConfig.buildAnimMsByLevel[_buildTo];
+
   Future<void> _onBuildTick() async {
     final map = _map;
     final cell = _buildingCell;
-    if (map == null || _buildTickBusy || cell == null) return;
-    _buildTickBusy = true;
+    if (map == null || cell == null) return;
     final t = _buildAnim.value;
+    final a = _shrinkFrac;
+    final end = GameConfig.buildAssembleEndByLevel[_buildTo];
+    final asm = ((t - a) / (end - a)).clamp(0.0, 1.0);
+
+    // Ses/titreşim kare atlamasından bağımsız: final bir kez, gökdelende
+    // birkaç katta bir hafif "tık" (katlar 0.14–0.76 arasında dizilir).
+    if (_buildTo >= 2 && !_finalePlayed && t >= end) {
+      _finalePlayed = true;
+      playFinaleFeedback(_buildTo);
+    }
+    if (_buildTo == GameConfig.maxStructureLevel) {
+      final total = GameConfig.skyTierFloors.fold<int>(0, (x, y) => x + y);
+      final floors = ((asm - 0.14) / 0.62 * total).floor();
+      final ticks = floors ~/ GameConfig.skyFloorTickEvery;
+      if (floors > 0 && ticks > _floorTicks && t < end) {
+        _floorTicks = ticks;
+        floorTickFeedback();
+      }
+    }
+
+    if (_buildTickBusy) return;
+    _buildTickBusy = true;
     try {
       if (_buildTo <= 1) {
         await map.setLayerProperties(_buildLayer, _tentProps(_tentScale(t)));
       } else {
-        const a = GameConfig.upgradeShrinkFrac;
         if (t < a && !_buildSwapped) {
           final s = 1 - Curves.easeInBack.transform(t / a).clamp(0.0, 1.0);
           await map.setLayerProperties(_buildLayer, _tentProps(s));
@@ -494,10 +520,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
             );
           }
-          await map.setLayerProperties(
-            _buildLayer,
-            _assembleProps(((t - a) / (1 - a)).clamp(0.0, 1.0)),
-          );
+          await map.setLayerProperties(_buildLayer, _assembleProps(asm));
         }
       }
     } catch (_) {
@@ -608,6 +631,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     _buildTo = to;
     _buildCost = cost;
     _buildSwapped = false;
+    _finalePlayed = false;
+    _floorTicks = 0;
     try {
       await map.animateCamera(
         CameraUpdate.newLatLngZoom(
@@ -634,7 +659,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       final anchor = await _screenAnchor(cell, to);
       if (!mounted || anchor == null) return;
       setState(() {
-        _puffs = BuildCelebration.makePuffs();
+        _fx = BuildFx(
+          to,
+          lite: false,
+          assembleEnd: GameConfig.buildAssembleEndByLevel[to],
+          shrink: to >= 2 ? _shrinkFrac : 0,
+        );
         _buildAnchor = anchor;
       });
       await _buildAnim.forward(from: 0).orCancel.catchError((_) {});
@@ -879,7 +909,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final tents = <Map<String, dynamic>>[];
     for (final h in _owned.values) {
       if (h.level < 1 || !_visible.contains(h.h3)) continue;
-      shadows.addAll(_structureShadow(h.h3, h.level));
+      // Kurulan yapının gölgesi animasyon bitince belirir.
+      if (h.h3 != _buildingCell) {
+        shadows.addAll(_structureShadow(h.h3, h.level));
+      }
       if (h.h3 != _buildingCell) {
         tents.addAll(_structureParts(h.h3, h.level, _ownedColor(h)));
       }
@@ -1238,8 +1271,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ground: _buildAnchor!.$1,
               top: _buildAnchor!.$2,
               cost: _buildCost,
-              puffs: _puffs,
-              coinRain: _buildTo >= 2,
+              fx: _fx,
               onSkip: () => _buildAnim.animateTo(
                 1,
                 duration: const Duration(milliseconds: 80),

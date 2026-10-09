@@ -108,18 +108,44 @@ abstract final class GameConfig {
   static const buildCosts = [0, 100, 600, 3000, 15000];
   static const maxStructureLevel = 4;
 
-  /// Kurulum animasyonu süresi (ms, indeks = yeni seviye) ve kamera zoom'u
-  /// (yüksek yapı sığsın). Gökdelende katlar tek tek dizilir (~120 ms/kat).
-  static const buildAnimMsByLevel = [0, 1200, 1700, 1900, 3000];
-  static const buildFocusZoomByLevel = [0.0, 16.5, 16.4, 16.1, 15.5];
+  /// Kurulum animasyonu (indeks = yeni seviye). Her seviye bir öncekinden
+  /// daha büyük an (plan 14.1-D: büyük anlar 1,5 sn'yi aşabilir): süre (ms),
+  /// kamera zoom'u (yüksek yapı sığsın), kurulumun bittiği oran (sonrası
+  /// final kutlaması). Gökdelende ~120 ms/kat.
+  static const buildAnimMsByLevel = [0, 1200, 2300, 2900, 4200];
+  static const buildFocusZoomByLevel = [0.0, 16.5, 16.4, 16.1, 15.4];
+  static const buildAssembleEndByLevel = [0.0, 1.0, 0.74, 0.72, 0.74];
 
-  /// Yükseltmede eski yapının küçülerek kaybolduğu bölüm (animasyon oranı).
-  static const upgradeShrinkFrac = 0.22;
+  /// Yükseltmede eski yapının küçülerek kaybolma süresi (ms).
+  static const upgradeShrinkMs = 450;
+
+  /// Final efektleri (indeks = seviye): yağan sikke, konfeti, havai fişek
+  /// patlaması sayısı. Düşük donanımda üçte biri.
+  static const finaleCoins = [0, 0, 12, 18, 26];
+  static const finaleConfetti = [0, 0, 0, 26, 44];
+  static const finaleFireworks = [0, 0, 0, 0, 3];
 
   /// Gökdelen kat sayıları (alttan üste üç kademe) ve kat yüksekliği
-  /// (hücre yarıçapına oran).
+  /// (hücre yarıçapına oran). Her [skyFloorTickEvery] katta hafif titreşim.
   static const skyTierFloors = [8, 6, 4];
-  static const skyFloorHeight = 0.055;
+  static const skyFloorHeight = 0.05;
+  static const skyFloorTickEvery = 3;
+
+  /// Final sesi/titreşimi (seviye ≥ 2): sikke sesi, otel+ claim tınısı.
+  static const finaleVibratePattern = [
+    <int>[],
+    <int>[],
+    [0, 30, 60, 60],
+    [0, 40, 50, 40, 50, 90],
+    [0, 60, 40, 60, 40, 60, 40, 160],
+  ];
+  static const finaleVibrateIntensities = [
+    <int>[],
+    <int>[],
+    [0, 120, 0, 200],
+    [0, 140, 0, 170, 0, 230],
+    [0, 160, 0, 190, 0, 220, 0, 255],
+  ];
 
   /// Adım 2.3: gelir. Kasa sunucudan bu aralıkla (sn) yeniden sorulur
   /// (oran/tavan sunucudaki `income_per_hour_<seviye>` / `income_cap_hours`).

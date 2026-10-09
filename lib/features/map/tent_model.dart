@@ -82,9 +82,9 @@ class TentModel {
     }
 
     return [
-      extrusionFeature(h3, f.ring(body), AppColors.text, 0, 0.3),
-      extrusionFeature(h3, f.ring(pole), AppColors.text, 0, 0.3),
-      extrusionFeature(h3, f.ring(convexHull(flagPts)), AppColors.text, 0, 0.3),
+      for (final poly in [body, pole, convexHull(flagPts)])
+        if (f.clip(poly) case final c when c.length >= 3)
+          extrusionFeature(h3, f.ring(c), AppColors.text, 0, 0.3),
     ];
   }();
 
@@ -309,6 +309,46 @@ class HexFrame {
     final a = math.atan2(pts[1][1] - pts[0][1], pts[1][0] - pts[0][0]);
     ux = math.cos(a);
     uy = math.sin(a);
+    // Kırpma için saat yönünün tersine, kenardan hafif içeride.
+    final ccw = _area(pts) > 0 ? pts : pts.reversed.toList();
+    corners = [
+      for (final q in ccw) [q[0] * 0.985, q[1] * 0.985],
+    ];
+  }
+
+  static double _area(List<List<double>> p) {
+    var a = 0.0;
+    for (var i = 0; i < p.length; i++) {
+      final q = p[(i + 1) % p.length];
+      a += p[i][0] * q[1] - q[0] * p[i][1];
+    }
+    return a / 2;
+  }
+
+  /// Altıgen köşeleri (dünya metresi, saat yönünün tersine).
+  late final List<List<double>> corners;
+
+  /// Dışbükey çokgeni altıgenle kırpar (Sutherland–Hodgman): gölge blok
+  /// tepesinin dışına, havaya taşmasın.
+  List<List<double>> clip(List<List<double>> poly) {
+    var out = poly;
+    for (var i = 0; i < corners.length && out.isNotEmpty; i++) {
+      final a = corners[i], b = corners[(i + 1) % corners.length];
+      double side(List<double> p) =>
+          (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+      final input = out;
+      out = [];
+      for (var j = 0; j < input.length; j++) {
+        final p = input[j], q = input[(j + 1) % input.length];
+        final sp = side(p), sq = side(q);
+        if (sp >= 0) out.add(p);
+        if ((sp >= 0) != (sq >= 0)) {
+          final t = sp / (sp - sq);
+          out.add([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+        }
+      }
+    }
+    return out;
   }
 
   static const _mLat = 110574.0;
