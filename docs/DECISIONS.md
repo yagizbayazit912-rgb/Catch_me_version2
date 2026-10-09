@@ -92,7 +92,7 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 ## GPS doğruluğu iyileştirme (2026-10-09, yürüyüş testi sonrası)
 - **İstemci:** Konum 3 sn'de bir okunur (`walkFixIntervalSec`, `LocationAccuracy.best`); 15 sn ping penceresindeki en iyi okuma gönderilir (yeni okuma ≤%20 kötüyse yeniyi tercih eder, yürürken eski altıgende kalmasın). `walkMaxSendAccuracyM` (100 m) üstü veya 30 sn'den eski okuma **gönderilmez**; durum satırı "GPS sinyali zayıf, bekleniyor" der, iyi okuma gelince hemen gönderir.
 - **Sunucu:** 50 m (`ping_max_accuracy_m`) – 100 m (`ping_soft_max_accuracy_m`) arası doğruluk, doğruluk dairesi tamamen tek altıgenin içindeyse kabul (hangi altıgen olduğu kesin). Üstü ret. Kayıt: `20261009040000_gps_soft_accuracy.sql`.
-- **Süre kaybı:** Ret edilen ping `ping_state`'i güncellemediği için sonraki kabul edilen ping aradaki süreyi `presence_max_credit_s` (60 sn) tavanına kadar sayar; kısa zayıf sinyal anları süre kaybettirmez.
+- **Süre kaybı:** Ret edilen ping `ping_state`'i güncellemediği için sonraki kabul edilen ping aradaki süreyi sayar; aralık `presence_max_credit_s` (60 sn) içindeyse tamamı, **aşarsa hiç** (2026-10-10 düzeltmesi `20261010000000_presence_gap_fix.sql`: önceden tavana kırpılıyordu, yürüyüş yeniden açılınca 1 dk bedava süre veriyordu).
 
 ## Adım 2.4 (ev / otel / gökdelen)
 - **Yükseltme = aynı RPC:** `build_structure` her çağrıda bir üst seviyeyi kurar (0→1→…→`max_structure_level`=4). Fiyat `build_cost_<seviye>`, gelir `income_per_hour_<seviye>` (plan tablosu: 600/3000/15000, 25/120/500).
