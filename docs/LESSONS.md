@@ -40,6 +40,11 @@ Bu dosya projenin **hafızasıdır**. Agent aynı hatayı iki kez yapmasın, iş
 ⏱️ Zorlandığım yer / token yiyen şey: ...   (opsiyonel)
 ```
 
+### [2026-10-09] Adım 2.4 — Ev / Otel / Gökdelen + yükseltme
+✅ İyi giden: Migration `20261009060000_upgrades.sql`: `build_structure` 1→4 yükseltir, eski kasayı önce toplar, hepsi tek işlem; `max_level` hatası. SQL testi `supabase/tests/upgrades.sql`, `structures.sql` test 3 güncellendi (ikinci çağrı artık yükseltme). İstemci: `building_model.dart` (ev: krem duvar + mercan beşik çatı + baca; otel: 5 kat yanan pencere şeridi + tente + tabela; gökdelen: 3 kademe 18 kat cam/beyaz bant + anten + bayrak), gölge ana kütlenin zarfından. Kurulum: parça başı `d/w/g/drop` özellikleri + `let`/`var` ifadesiyle tek katman; yükseltmede eski yapı küçülür → kaynak değişir → parçalar sırayla kurulur → sikke yağmuru. Kart: "🏠 Ev", "Otel • 3000" yükselt butonu. `flutter analyze` temiz, test geçti.
+❌ Hata / sorun: Cihazda henüz denenmedi (`let`/`var` ifadesinin maplibre_gl Android'de çalıştığı doğrulanmalı). Yerelde Postgres yok, SQL testi kullanıcı çalıştıracak.
+📌 Çıkarılan kural: Çok parçalı 3D kurulum animasyonunda parça zamanlaması veriye (feature özelliği) yazılır, kare başı tek ifade gönderilir; parça sayısı kadar katman/çağrı açılmaz.
+
 ### [2026-10-09] Düzeltme — GPS doğruluğu (yürüyüş modu)
 ✅ İyi giden: Cihazda doğrulandı: uzaktan bölge yakınlaştırınca görünüyor; 5 dk sahiplenme yürüyüş modunda çalışıyor.
 ❌ Hata / sorun: Yürüyüşte çok "GPS doğruluğu düşük" reddi → istemci pencere başındaki ilk okumayı ne olursa olsun gönderiyordu, sunucu 50 m üstünü altıgenden bağımsız reddediyordu → istemci 3 sn'de okuyup en iyiyi seçiyor, zayıfı göndermiyor; sunucu 50–100 m'yi daire tek altıgendeyse kabul ediyor.

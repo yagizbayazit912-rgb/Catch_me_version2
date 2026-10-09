@@ -22,7 +22,7 @@ class TentModel {
   final _shadowCache = <String, List<Map<String, dynamic>>>{};
 
   /// Hücrenin ortalama yarıçapı (metre).
-  double radius(String h3) => _Frame(_hex, h3).r;
+  double radius(String h3) => HexFrame(_hex, h3).r;
 
   /// Çadır gövdesi + kapı + direk + bayrak. [flag] sahibin rengi.
   List<Map<String, dynamic>> parts(String h3, Color flag) {
@@ -35,7 +35,7 @@ class TentModel {
   /// yüksekliğiyle orantılı kaydırılıp zemine yansıtılır; gövde gölgesi bu
   /// noktaların dış sınırı (dışbükey zarf). Direk ayrı ince bir şerit.
   List<Map<String, dynamic>> shadow(String h3) => _shadowCache[h3] ??= () {
-    final f = _Frame(_hex, h3);
+    final f = HexFrame(_hex, h3);
     final s = _Shape(f.r);
     const k = GameConfig.tentShadowLength;
     // Işığın tersi (dünyada güney-doğu), birim vektör.
@@ -56,7 +56,7 @@ class TentModel {
         pts.add([q[0] + dx * k * z, q[1] + dy * k * z]);
       }
     }
-    final body = _hull(pts);
+    final body = convexHull(pts);
 
     // Direk: tabanı sırtta (0.9 H), tepesi topuzda (1.56 H).
     final pw = 0.012 * f.r;
@@ -82,14 +82,14 @@ class TentModel {
     }
 
     return [
-      _feature(h3, f.ring(body), AppColors.text, 0, 0.3),
-      _feature(h3, f.ring(pole), AppColors.text, 0, 0.3),
-      _feature(h3, f.ring(_hull(flagPts)), AppColors.text, 0, 0.3),
+      extrusionFeature(h3, f.ring(body), AppColors.text, 0, 0.3),
+      extrusionFeature(h3, f.ring(pole), AppColors.text, 0, 0.3),
+      extrusionFeature(h3, f.ring(convexHull(flagPts)), AppColors.text, 0, 0.3),
     ];
   }();
 
   List<Map<String, dynamic>> _build(String h3, Color flag) {
-    final f = _Frame(_hex, h3);
+    final f = HexFrame(_hex, h3);
     final r = f.r;
     final s = _Shape(r);
     final height = s.height;
@@ -103,7 +103,7 @@ class TentModel {
     for (var k = 0; k < n; k++) {
       final pMid = (k + 0.5) / n;
       out.add(
-        _feature(
+        extrusionFeature(
           h3,
           f.rect(0, 0, frontAt(pMid), math.max(widthAt(pMid), 0.012 * r)),
           (k ~/ 2).isEven ? AppColors.tentStripe : AppColors.tentCanvas,
@@ -128,7 +128,7 @@ class TentModel {
       final b = height * doorTop * j / m;
       final t = height * doorTop * (j + 1) / m;
       out.add(
-        _feature(
+        extrusionFeature(
           h3,
           f.rect(front + doorDepth, 0, doorDepth, dHalf),
           AppColors.tentDoor,
@@ -138,7 +138,7 @@ class TentModel {
       );
       for (final side in const [-1.0, 1.0]) {
         out.add(
-          _feature(
+          extrusionFeature(
             h3,
             f.rect(front + flapDepth, side * (dHalf + fHalf), flapDepth, fHalf),
             AppColors.tentFlap,
@@ -152,7 +152,7 @@ class TentModel {
     // Direk (ahşap) + tepede sarı topuz.
     final pole = 0.010 * r;
     out.add(
-      _feature(
+      extrusionFeature(
         h3,
         f.rect(0, 0, pole, pole),
         AppColors.tentPole,
@@ -161,7 +161,7 @@ class TentModel {
       ),
     );
     out.add(
-      _feature(
+      extrusionFeature(
         h3,
         f.rect(0, 0, pole * 2.2, pole * 2.2),
         AppColors.tentKnob,
@@ -174,7 +174,7 @@ class TentModel {
     // uzaklaştıkça incelir, sahibin renginde.
     for (final g in s.pennant()) {
       out.add(
-        _feature(
+        extrusionFeature(
           h3,
           f.ring([
             [g.x0, -g.t],
@@ -190,22 +190,39 @@ class TentModel {
     }
     return out;
   }
-
-  static Map<String, dynamic> _feature(
-    String h3,
-    List<List<double>> ring,
-    Color color,
-    double base,
-    double top,
-  ) => {
-    'type': 'Feature',
-    'properties': {'h3': h3, 'color': cssColor(color), 'b': base, 'h': top},
-    'geometry': {
-      'type': 'Polygon',
-      'coordinates': [ring],
-    },
-  };
 }
+
+/// Bir fill-extrusion parçası. `b`/`h` blok tepesine göre taban/tavan (m).
+/// Kurulum animasyonu için (2.4): `d` gecikme ve `w` süre (0–1, kurulum
+/// ilerlemesinde), `g` 1 = tabandan büyür / 0 = tam boy belirir, `drop`
+/// yukarıdan oturma mesafesi (m). Varsayılanlar animasyonsuz parça.
+Map<String, dynamic> extrusionFeature(
+  String h3,
+  List<List<double>> ring,
+  Color color,
+  double base,
+  double top, {
+  double delay = 0,
+  double span = 1,
+  bool grow = true,
+  double drop = 0,
+}) => {
+  'type': 'Feature',
+  'properties': {
+    'h3': h3,
+    'color': cssColor(color),
+    'b': base,
+    'h': top,
+    'd': delay,
+    'w': span,
+    'g': grow ? 1 : 0,
+    'drop': drop,
+  },
+  'geometry': {
+    'type': 'Polygon',
+    'coordinates': [ring],
+  },
+};
 
 /// Çadır profili: p (0 taban → 1 tepe) yüksekliğinde yarım genişlik ve ön
 /// yüzün konumu. Çan eğrisi: taban geniş, tepe sivri; uçlar hafif içe eğik.
@@ -243,7 +260,7 @@ class _Shape {
 }
 
 /// Dışbükey zarf (monotone chain), saat yönünün tersine.
-List<List<double>> _hull(List<List<double>> pts) {
+List<List<double>> convexHull(List<List<double>> pts) {
   final p = [
     ...pts,
   ]..sort((a, b) => a[0] != b[0] ? a[0].compareTo(b[0]) : a[1].compareTo(b[1]));
@@ -274,8 +291,8 @@ String cssColor(Color c) =>
 
 /// Hücre merkezli yerel metre çerçevesi: x doğu, y kuzey. `u` ekseni
 /// hücrenin ilk kenarına paralel (sırt yönü), `w` ona dik.
-class _Frame {
-  _Frame(HexService hex, String h3) {
+class HexFrame {
+  HexFrame(HexService hex, String h3) {
     final c = hex.center(h3);
     lng0 = c[0];
     lat0 = c[1];

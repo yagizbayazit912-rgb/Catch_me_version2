@@ -93,3 +93,11 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **İstemci:** Konum 3 sn'de bir okunur (`walkFixIntervalSec`, `LocationAccuracy.best`); 15 sn ping penceresindeki en iyi okuma gönderilir (yeni okuma ≤%20 kötüyse yeniyi tercih eder, yürürken eski altıgende kalmasın). `walkMaxSendAccuracyM` (100 m) üstü veya 30 sn'den eski okuma **gönderilmez**; durum satırı "GPS sinyali zayıf, bekleniyor" der, iyi okuma gelince hemen gönderir.
 - **Sunucu:** 50 m (`ping_max_accuracy_m`) – 100 m (`ping_soft_max_accuracy_m`) arası doğruluk, doğruluk dairesi tamamen tek altıgenin içindeyse kabul (hangi altıgen olduğu kesin). Üstü ret. Kayıt: `20261009040000_gps_soft_accuracy.sql`.
 - **Süre kaybı:** Ret edilen ping `ping_state`'i güncellemediği için sonraki kabul edilen ping aradaki süreyi `presence_max_credit_s` (60 sn) tavanına kadar sayar; kısa zayıf sinyal anları süre kaybettirmez.
+
+## Adım 2.4 (ev / otel / gökdelen)
+- **Yükseltme = aynı RPC:** `build_structure` her çağrıda bir üst seviyeyi kurar (0→1→…→`max_structure_level`=4). Fiyat `build_cost_<seviye>`, gelir `income_per_hour_<seviye>` (plan tablosu: 600/3000/15000, 25/120/500).
+- **Yükseltmede eski kasa otomatik toplanır** (`income` kaydı, ref = hücre) ve sayaç sıfırlanır: yeni oran geriye dönük işlemez, birikmiş gelir de yanmaz. Kasa yükseltme parasına sayılır (kart da bakiye + kasa ile karşılaştırır).
+- **Oyuncu seviyesi şartı (Sv. 5/15/30) şimdilik yok:** oyuncu seviyesi sistemi henüz yok; o gelince `build_structure`'a eklenir.
+- **Blok yüksekliği seviyeyle artmıyor** (40 m sabit): yükseklik hissini yapının kendisi veriyor (gökdelen ~1.2 r). 14.1-A'daki "blok seviyeyle yükselir" cila turunda tekrar değerlendirilebilir; değişirse tüm yapı katmanları blok yüksekliğini özellikten okumalı.
+- **Kurulum animasyonu tek ifadeyle:** her parçada gecikme/süre/büyüme/oturma özelliği (`extrusionFeature`), animasyon katmanına karede tek `setLayerProperties`. Gökdelende "hafif ekran titremesi" yok (harita native görünüm; titreşim haptikle veriliyor), kamera yükselmesi yerine daha uzak odak zoom'u.
+- **Sikke yağmuru** toz parçacığı tohumlarını kullanır (düşük donanım sayısı aynı ayardan).

@@ -39,12 +39,12 @@ begin
     raise exception 'FAIL 2: %', r;
   end if;
 
-  -- 3) İkinci kez kuramaz
+  -- 3) İkinci çağrı yükseltmedir (2.4); 50 altınla eve (600) yetmez
   begin
     perform public.build_structure('test_hex_a1');
-    raise exception 'FAIL 3: iki kez kurdu';
+    raise exception 'FAIL 3: parasız yükseltti';
   exception when raise_exception then
-    if sqlerrm <> 'already_built' then raise; end if;
+    if sqlerrm <> 'insufficient_funds' then raise; end if;
   end;
 
   -- 4) Yetersiz bakiye: reddedilir

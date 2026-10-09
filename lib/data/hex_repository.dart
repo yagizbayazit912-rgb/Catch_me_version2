@@ -14,7 +14,7 @@ class OwnedHex {
   final bool isMine;
   final int colorSeed;
 
-  /// Yapı seviyesi: 0 = yok, 1 = çadır (2.4'te ev/otel/gökdelen).
+  /// Yapı seviyesi: 0 = yok, 1 çadır, 2 ev, 3 otel, 4 gökdelen.
   final int level;
 
   OwnedHex withLevel(int l) =>
@@ -35,7 +35,7 @@ class BuildException implements Exception {
 
   String get message => switch (code) {
     'insufficient_funds' => 'Yeterli altının yok',
-    'already_built' => 'Burada zaten bir yapı var',
+    'already_built' || 'max_level' => 'Bu yapı en üst seviyede',
     'not_owner' => 'Bu bölge senin değil',
     _ => 'İnşa edilemedi, tekrar dene',
   };
@@ -61,15 +61,43 @@ class HexRepository {
     ];
   }
 
-  /// Kendi hücreme çadır kurar (`build_structure` RPC). Karar ve ödeme
-  /// sunucuda; dönen yeni altın bakiyesi.
-  Future<int> buildTent(String h3) async {
+  /// Kendi hücremde bir sonraki seviyeyi kurar (0→çadır, 1→ev, ...)
+  /// (`build_structure` RPC). Karar, ödeme ve eski kasanın toplanması
+  /// sunucuda.
+  Future<BuildResult> build(String h3) async {
     try {
       final res = await _client.rpc('build_structure', params: {'p_h3': h3});
-      return ((res as Map)['coins'] as num).toInt();
+      final m = res as Map;
+      return BuildResult(
+        level: (m['level'] as num).toInt(),
+        coins: (m['coins'] as num).toInt(),
+        cost: (m['cost'] as num).toInt(),
+        collected: (m['collected'] as num?)?.toInt() ?? 0,
+      );
     } on PostgrestException catch (e) {
-      const known = {'insufficient_funds', 'already_built', 'not_owner'};
+      const known = {
+        'insufficient_funds',
+        'already_built',
+        'max_level',
+        'not_owner',
+      };
       throw BuildException(known.contains(e.message) ? e.message : 'unknown');
     }
   }
+}
+
+/// İnşa/yükseltme sonucu: yeni seviye, bakiye, ödenen ve yükseltmede
+/// otomatik toplanan eski kasa.
+class BuildResult {
+  const BuildResult({
+    required this.level,
+    required this.coins,
+    required this.cost,
+    required this.collected,
+  });
+
+  final int level;
+  final int coins;
+  final int cost;
+  final int collected;
 }

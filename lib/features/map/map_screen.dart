@@ -17,6 +17,7 @@ import '../../data/ping_repository.dart';
 import '../../data/wallet_repository.dart';
 import 'build_celebration.dart';
 import 'claim_celebration.dart';
+import 'building_model.dart';
 import 'income_celebration.dart';
 import 'tent_model.dart';
 import 'walk_controller.dart';
@@ -59,16 +60,23 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   final _hex = HexService();
   late final _tent = TentModel(_hex);
+  late final _building = BuildingModel(_hex);
 
   /// Dokunulan kendi hücrem (inşa kartı açık).
   String? _selected;
   bool _buildBusy = false;
   String? _buildError;
 
-  /// Animasyonu oynayan çadırın hücresi; sabit katmanda çizilmez.
+  /// Animasyonu oynayan yapının hücresi; sabit katmanda çizilmez.
   String? _buildingCell;
   (Offset ground, Offset top)? _buildAnchor;
   List<DustPuff> _puffs = const [];
+
+  /// Kurulum animasyonu: yeni seviye, ödenen, ve yükseltmede eski yapının
+  /// yeni yapıyla değiştirildi mi (küçülme bitti).
+  int _buildTo = 1;
+  int _buildCost = 0;
+  bool _buildSwapped = false;
   late final AnimationController _buildAnim = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: GameConfig.buildAnimMs),
@@ -336,15 +344,162 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     return down + (1 - down) * Curves.easeOut.transform((p - 0.7) / 0.3);
   }
 
+  /// Kurulum ifadesi (2.4): her parça kendi gecikmesi `d` ve süresi `w`
+  /// ile [t] (0–1) ilerlemesinde belirir; `g` = 1 tabandan büyür, 0 tam boy
+  /// gelir; `drop` kadar yukarıdan oturur. Henüz başlamamış parça zemine
+  /// (bloğun içine) gizlenir. Tüm alanlar birlikte gönderilir (Altın Kural).
+  FillExtrusionLayerProperties _assembleProps(double t) {
+    const blk = GameConfig.hexExtrusionHeight;
+    // p: parçanın kendi ilerlemesi, k: yumuşatılmış hali (smoothstep).
+    List<dynamic> withK(List<dynamic> body) => [
+      'let',
+      'p',
+      [
+        'min',
+        1.0,
+        [
+          'max',
+          0.0,
+          [
+            '/',
+            [
+              '-',
+              t,
+              ['get', 'd'],
+            ],
+            ['get', 'w'],
+          ],
+        ],
+      ],
+      [
+        'let',
+        'k',
+        [
+          '*',
+          ['var', 'p'],
+          ['var', 'p'],
+          [
+            '-',
+            3.0,
+            [
+              '*',
+              2.0,
+              ['var', 'p'],
+            ],
+          ],
+        ],
+        body,
+      ],
+    ];
+    final vis = [
+      'case',
+      [
+        '>',
+        ['var', 'p'],
+        0.0,
+      ],
+      1.0,
+      0.0,
+    ];
+    final lift = [
+      '*',
+      ['get', 'drop'],
+      [
+        '-',
+        1.0,
+        ['var', 'k'],
+      ],
+    ];
+    final thick = [
+      '*',
+      [
+        '-',
+        ['get', 'h'],
+        ['get', 'b'],
+      ],
+      [
+        '+',
+        [
+          '*',
+          ['get', 'g'],
+          ['var', 'k'],
+        ],
+        [
+          '-',
+          1.0,
+          ['get', 'g'],
+        ],
+      ],
+    ];
+    return FillExtrusionLayerProperties(
+      fillExtrusionColor: [Expressions.get, 'color'],
+      fillExtrusionOpacity: 1.0,
+      fillExtrusionBase: withK([
+        '*',
+        vis,
+        [
+          '+',
+          blk,
+          ['get', 'b'],
+          lift,
+        ],
+      ]),
+      fillExtrusionHeight: withK([
+        '*',
+        vis,
+        [
+          '+',
+          blk,
+          ['get', 'b'],
+          lift,
+          thick,
+        ],
+      ]),
+      fillExtrusionVerticalGradient: false,
+    );
+  }
+
+  /// Hücredeki yapının parçaları / gölgesi (seviyeye göre model).
+  List<Map<String, dynamic>> _structureParts(String h3, int level, Color c) =>
+      level <= 1 ? _tent.parts(h3, c) : _building.parts(h3, level, c);
+
+  List<Map<String, dynamic>> _structureShadow(String h3, int level) =>
+      level <= 1 ? _tent.shadow(h3) : _building.shadow(h3, level);
+
+  /// Animasyon karesi. Çadır (0→1): squash & stretch. Yükseltme: önce eski
+  /// yapı küçülür (`upgradeShrinkFrac`), sonra kaynak yeni yapıya geçer ve
+  /// parçalar sırayla kurulur.
   Future<void> _onBuildTick() async {
     final map = _map;
-    if (map == null || _buildTickBusy) return;
+    final cell = _buildingCell;
+    if (map == null || _buildTickBusy || cell == null) return;
     _buildTickBusy = true;
+    final t = _buildAnim.value;
     try {
-      await map.setLayerProperties(
-        _buildLayer,
-        _tentProps(_tentScale(_buildAnim.value)),
-      );
+      if (_buildTo <= 1) {
+        await map.setLayerProperties(_buildLayer, _tentProps(_tentScale(t)));
+      } else {
+        const a = GameConfig.upgradeShrinkFrac;
+        if (t < a && !_buildSwapped) {
+          final s = 1 - Curves.easeInBack.transform(t / a).clamp(0.0, 1.0);
+          await map.setLayerProperties(_buildLayer, _tentProps(s));
+        } else {
+          if (!_buildSwapped) {
+            _buildSwapped = true;
+            await map.setLayerProperties(_buildLayer, _assembleProps(0));
+            await map.setGeoJsonSource(
+              _buildSource,
+              HexService.collection(
+                _structureParts(cell, _buildTo, _buildFlag()),
+              ),
+            );
+          }
+          await map.setLayerProperties(
+            _buildLayer,
+            _assembleProps(((t - a) / (1 - a)).clamp(0.0, 1.0)),
+          );
+        }
+      }
     } catch (_) {
       // Stil yeniden yüklenirken katman yoksa sessizce geç.
     } finally {
@@ -387,26 +542,27 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   /// Sunucuya inşa isteği; kabul edilirse bakiye güncellenir ve animasyon
   /// oynar. Ret nedeni kartta gösterilir.
-  Future<void> _buildTent(String cell) async {
+  Future<void> _build(String cell) async {
     if (_buildBusy || _buildingCell != null) return;
     setState(() {
       _buildBusy = true;
       _buildError = null;
     });
     try {
-      final coins = await _hexRepo.buildTent(cell);
+      final from = _owned[cell]?.level ?? 0;
+      final res = await _hexRepo.build(cell);
       final prev = _owned[cell];
-      if (prev != null) _owned[cell] = prev.withLevel(1);
+      if (prev != null) _owned[cell] = prev.withLevel(res.level);
       if (!mounted) return;
       setState(() {
         _buildBusy = false;
         _selected = null;
-        _balance = Wallet(coins: coins, gems: _balance?.gems ?? 0);
+        _balance = Wallet(coins: res.coins, gems: _balance?.gems ?? 0);
       });
-      _playBuild(cell);
+      _playBuild(cell, from, res.level, res.cost);
       _loadIncome();
     } on BuildException catch (e) {
-      if (e.code == 'already_built' || e.code == 'not_owner') {
+      if (const {'already_built', 'max_level', 'not_owner'}.contains(e.code)) {
         _fetchedAt.remove(cell);
         _refreshOwned();
       }
@@ -427,10 +583,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
   }
 
-  /// İnşa anı: kamera çadıra odaklanır, haptik + ses, çadır ayrı katmanda
-  /// zıplar, ekranda toz/parıltı/"-100". "Hareketi azalt" açıksa çadır
-  /// doğrudan son halinde belirir. Animasyon UI'yı bloklamaz, atlanabilir.
-  Future<void> _playBuild(String cell) async {
+  Color _buildFlag() {
+    final o = _owned[_buildingCell];
+    return o == null ? AppColors.ownHex : _ownedColor(o);
+  }
+
+  /// İnşa/yükseltme anı: kamera yapıya odaklanır, haptik + ses, yapı ayrı
+  /// katmanda oynar (çadır zıplar; yükseltmede eski yapı küçülür, yenisi
+  /// kurulur, sikke yağar), ekranda toz/parıltı/"-maliyet". "Hareketi
+  /// azalt" açıksa doğrudan son hal. UI'yı bloklamaz, atlanabilir.
+  Future<void> _playBuild(String cell, int from, int to, int cost) async {
     final map = _map;
     if (map == null || !_hexDrawn) return;
     final reduce = MediaQuery.of(context).disableAnimations;
@@ -443,24 +605,33 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       return;
     }
 
-    _buildingCell = cell;
+    _buildTo = to;
+    _buildCost = cost;
+    _buildSwapped = false;
     try {
       await map.animateCamera(
-        CameraUpdate.newLatLngZoom(target, GameConfig.buildFocusZoom),
+        CameraUpdate.newLatLngZoom(
+          target,
+          GameConfig.buildFocusZoomByLevel[to],
+        ),
         duration: const Duration(milliseconds: GameConfig.buildFocusMs),
       );
+      _buildAnim.duration = Duration(
+        milliseconds: GameConfig.buildAnimMsByLevel[to],
+      );
       _buildAnim.value = 0;
-      await map.setLayerProperties(_buildLayer, _tentProps(0));
-      final o = _owned[cell];
+      // Çadırda yeni yapı sıfırdan, yükseltmede önce eski yapı tam boy.
+      await map.setLayerProperties(_buildLayer, _tentProps(to <= 1 ? 0 : 1));
+      _buildingCell = cell;
       await map.setGeoJsonSource(
         _buildSource,
         HexService.collection(
-          _tent.parts(cell, o == null ? AppColors.ownHex : _ownedColor(o)),
+          _structureParts(cell, to <= 1 ? to : from, _buildFlag()),
         ),
       );
       await _renderOwned();
 
-      final anchor = await _screenAnchor(cell);
+      final anchor = await _screenAnchor(cell, to);
       if (!mounted || anchor == null) return;
       setState(() {
         _puffs = BuildCelebration.makePuffs();
@@ -482,7 +653,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   /// Hücredeki yapının ekran konumu (mantıksal piksel): blok tepesi ve çadır
   /// tepesi. Zemin noktası + yüksekliğin eğik kameradaki izdüşümü (yaklaşık).
   /// Android piksel döner → mantıksal piksele çevrilir.
-  Future<(Offset ground, Offset top)?> _screenAnchor(String cell) async {
+  Future<(Offset ground, Offset top)?> _screenAnchor(
+    String cell, [
+    int level = 1,
+  ]) async {
     final map = _map;
     if (map == null) return null;
     final c = _hex.center(cell);
@@ -500,7 +674,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final base = Offset(p.x / s, p.y / s);
     final tentTop =
         GameConfig.hexExtrusionHeight +
-        GameConfig.tentHeight * _tent.radius(cell);
+        (level <= 1
+            ? GameConfig.tentHeight * _tent.radius(cell)
+            : _building.topHeight(cell, level));
     return (
       base - Offset(0, GameConfig.hexExtrusionHeight * up),
       base - Offset(0, tentTop * up),
@@ -703,9 +879,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final tents = <Map<String, dynamic>>[];
     for (final h in _owned.values) {
       if (h.level < 1 || !_visible.contains(h.h3)) continue;
-      shadows.addAll(_tent.shadow(h.h3));
+      shadows.addAll(_structureShadow(h.h3, h.level));
       if (h.h3 != _buildingCell) {
-        tents.addAll(_tent.parts(h.h3, _ownedColor(h)));
+        tents.addAll(_structureParts(h.h3, h.level, _ownedColor(h)));
       }
     }
     await map.setGeoJsonSource(_shadowSource, HexService.collection(shadows));
@@ -850,7 +1026,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   /// Kendi hücreme dokununca alttan çıkan kart: yapı yoksa "Çadır kur",
-  /// varsa yapı bilgisi. Fiyat gösterim içindir; kararı sunucu verir.
+  /// varsa yapı bilgisi ve bir üst seviyeye "Yükselt". Fiyat gösterim
+  /// içindir; kararı sunucu verir.
   String _incomeLine(String cell, int level) {
     final i = _income[cell];
     if (i == null) return 'Seviye $level • Bu bölge senin';
@@ -862,7 +1039,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final text = Theme.of(context).textTheme;
     final level = _owned[cell]?.level ?? 0;
     final coins = _balance?.coins;
-    final canAfford = coins == null || coins >= GameConfig.tentCost;
+    final maxed = level >= GameConfig.maxStructureLevel;
+    final next = maxed ? level : level + 1;
+    final cost = GameConfig.buildCosts[next];
+    // Yükseltmede bu yapının kasası da sunucuda otomatik toplanıp harcanır.
+    final usable = (coins ?? 0) + (_income[cell]?.pending ?? 0);
+    final canAfford = coins == null || usable >= cost;
+    final nextName = GameConfig.structureNames[next];
     final err = _buildError;
     return SafeArea(
       child: Align(
@@ -879,7 +1062,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                level >= 1 ? '⛺ Çadır' : 'Bölgene çadır kur',
+                level >= 1
+                    ? '${GameConfig.structureEmoji[level]} '
+                          '${GameConfig.structureNames[level]}'
+                    : 'Bölgene çadır kur',
                 style: text.titleLarge?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 4),
@@ -910,24 +1096,30 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     onPressed: () => setState(() => _selected = null),
                     child: Text(level >= 1 ? 'Kapat' : 'Vazgeç'),
                   ),
-                  if (level < 1) ...[
+                  if (!maxed) ...[
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       style: AppTheme.goldButton,
                       onPressed: _buildBusy || !canAfford
                           ? null
-                          : () => _buildTent(cell),
+                          : () => _build(cell),
                       icon: _buildBusy
                           ? const SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.monetization_on_rounded),
+                          : Icon(
+                              level < 1
+                                  ? Icons.monetization_on_rounded
+                                  : Icons.upgrade_rounded,
+                            ),
                       label: Text(
-                        canAfford
-                            ? 'Kur • ${GameConfig.tentCost}'
-                            : '${GameConfig.tentCost} altın gerekli',
+                        !canAfford
+                            ? '$cost altın gerekli'
+                            : level < 1
+                            ? 'Kur • $cost'
+                            : '$nextName • $cost',
                       ),
                     ),
                   ],
@@ -1045,8 +1237,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               progress: _buildAnim,
               ground: _buildAnchor!.$1,
               top: _buildAnchor!.$2,
-              cost: GameConfig.tentCost,
+              cost: _buildCost,
               puffs: _puffs,
+              coinRain: _buildTo >= 2,
               onSkip: () => _buildAnim.animateTo(
                 1,
                 duration: const Duration(milliseconds: 80),

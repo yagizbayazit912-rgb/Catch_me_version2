@@ -55,6 +55,7 @@ class BuildCelebration extends StatelessWidget {
     required this.top,
     required this.cost,
     required this.puffs,
+    this.coinRain = false,
     this.reduceMotion = false,
     this.onSkip,
   });
@@ -64,6 +65,9 @@ class BuildCelebration extends StatelessWidget {
   final Offset top;
   final int cost;
   final List<DustPuff> puffs;
+
+  /// Yükseltme sonunda sikke yağmuru (plan 14.1-C).
+  final bool coinRain;
   final bool reduceMotion;
   final VoidCallback? onSkip;
 
@@ -92,7 +96,7 @@ class BuildCelebration extends StatelessWidget {
               Positioned.fill(
                 child: IgnorePointer(
                   child: CustomPaint(
-                    painter: _BuildPainter(t, ground, top, puffs),
+                    painter: _BuildPainter(t, ground, top, puffs, coinRain),
                   ),
                 ),
               ),
@@ -153,12 +157,13 @@ class DustPuff {
 }
 
 class _BuildPainter extends CustomPainter {
-  _BuildPainter(this.t, this.ground, this.top, this.puffs);
+  _BuildPainter(this.t, this.ground, this.top, this.puffs, this.coinRain);
 
   final double t;
   final Offset ground;
   final Offset top;
   final List<DustPuff> puffs;
+  final bool coinRain;
 
   // Eğik kamerada zemin basık görünür; halka ve toz elips üzerinde yayılır.
   static const _flat = 0.45;
@@ -209,6 +214,8 @@ class _BuildPainter extends CustomPainter {
       );
     }
 
+    if (coinRain) _rain(canvas);
+
     // 3) Parıltı (t 0.5–0.9): tepede küçük yıldızlar.
     final st = ((t - 0.5) / 0.4).clamp(0.0, 1.0);
     if (st > 0 && st < 1) {
@@ -232,6 +239,39 @@ class _BuildPainter extends CustomPainter {
     }
   }
 
+  /// Sikke yağmuru (t 0.72–1): yapının tepesinin üstünden sikkeler düşer,
+  /// dönerek (yatay basıklık) zemine iner ve solar. Konumlar parçacık
+  /// tohumlarından (toz ile aynı liste) türetilir, her karede sabit.
+  void _rain(Canvas canvas) {
+    for (var i = 0; i < puffs.length; i++) {
+      final p = puffs[i];
+      final rt = ((t - 0.72 - p.delay * 2) / 0.26).clamp(0.0, 1.0);
+      if (rt <= 0 || rt >= 1) continue;
+      final x = top.dx + math.cos(p.angle) * p.distance * 1.3;
+      final y0 = top.dy - 90 - p.size * 3;
+      final y1 = ground.dy + math.sin(p.angle) * p.distance * _flat;
+      final pos = Offset(x, y0 + (y1 - y0) * Curves.easeIn.transform(rt));
+      final fade = rt < 0.8 ? 1.0 : 1 - (rt - 0.8) / 0.2;
+      final spin = math.cos((rt * 3 + p.delay * 20) * math.pi).abs();
+      final rect = Rect.fromCenter(
+        center: pos,
+        width: 16 * (0.3 + 0.7 * spin),
+        height: 16,
+      );
+      canvas.drawOval(
+        rect,
+        Paint()..color = AppColors.coinFace.withValues(alpha: fade),
+      );
+      canvas.drawOval(
+        rect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = AppColors.coinRim.withValues(alpha: fade),
+      );
+    }
+  }
+
   void _star(Canvas c, Offset p, double r, Color color) {
     final path = Path();
     for (var i = 0; i < 8; i++) {
@@ -244,5 +284,6 @@ class _BuildPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BuildPainter old) => old.t != t;
+  bool shouldRepaint(_BuildPainter old) =>
+      old.t != t || old.coinRain != coinRain;
 }

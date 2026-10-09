@@ -37,6 +37,21 @@ abstract final class AppColors {
   static const tentPole = Color(0xFFA07856);
   static const tentKnob = accentButter;
 
+  /// Adım 2.4: ev (krem duvar, mercan çatı), otel (açık lavanta, koyu
+  /// lavanta çatı, şeftali tente), gökdelen (gök camı + beyaz kat bantları).
+  /// Yanan pencereler tereyağı sarısı.
+  static const houseWall = Color(0xFFFFF7EC);
+  static const houseBase = Color(0xFFE9DCCB);
+  static const houseRoof = Color(0xFFFF9F8E);
+  static const houseChimney = Color(0xFFC98B74);
+  static const windowLit = accentButter;
+  static const hotelWall = Color(0xFFEDE6FF);
+  static const hotelTrim = Color(0xFFA996E6);
+  static const hotelAwning = accentPeach;
+  static const skyGlass = Color(0xFFB5DDF8);
+  static const skyBand = surface;
+  static const skySpire = Color(0xFFB8C4CC);
+
   /// Adım 2.3: uçan sikke (tereyağı yüz, sıcak bal kenar).
   static const coinFace = accentButter;
   static const coinRim = Color(0xFFF5C26B);

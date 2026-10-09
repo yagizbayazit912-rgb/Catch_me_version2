@@ -101,6 +101,26 @@ abstract final class GameConfig {
   static const buildDustPuffs = 9;
   static const buildDustPuffsLite = 4;
 
+  /// Adım 2.4: seviye → yapı adı ve kurulum fiyatı (indeks = seviye).
+  /// Fiyatlar sunucudaki `build_cost_<seviye>` ile aynı (sadece gösterim).
+  static const structureNames = ['', 'Çadır', 'Ev', 'Otel', 'Gökdelen'];
+  static const structureEmoji = ['', '⛺', '🏠', '🏨', '🏙️'];
+  static const buildCosts = [0, 100, 600, 3000, 15000];
+  static const maxStructureLevel = 4;
+
+  /// Kurulum animasyonu süresi (ms, indeks = yeni seviye) ve kamera zoom'u
+  /// (yüksek yapı sığsın). Gökdelende katlar tek tek dizilir (~120 ms/kat).
+  static const buildAnimMsByLevel = [0, 1200, 1700, 1900, 3000];
+  static const buildFocusZoomByLevel = [0.0, 16.5, 16.4, 16.1, 15.5];
+
+  /// Yükseltmede eski yapının küçülerek kaybolduğu bölüm (animasyon oranı).
+  static const upgradeShrinkFrac = 0.22;
+
+  /// Gökdelen kat sayıları (alttan üste üç kademe) ve kat yüksekliği
+  /// (hücre yarıçapına oran).
+  static const skyTierFloors = [8, 6, 4];
+  static const skyFloorHeight = 0.055;
+
   /// Adım 2.3: gelir. Kasa sunucudan bu aralıkla (sn) yeniden sorulur
   /// (oran/tavan sunucudaki `income_per_hour_<seviye>` / `income_cap_hours`).
   static const incomePollSec = 60;

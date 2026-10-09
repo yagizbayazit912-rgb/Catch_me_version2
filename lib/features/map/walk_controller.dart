@@ -61,7 +61,7 @@ class WalkController extends ChangeNotifier {
     _fastStreak = 0;
     _slowStreak = 0;
     _best = null;
-    _sub =Geolocator.getPositionStream(
+    _sub = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: GameConfig.walkDistanceFilterM,
