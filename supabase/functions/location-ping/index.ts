@@ -6,13 +6,14 @@
 // karar burada. Başka oyunculara kesin koordinat dönmez; bu cevap yalnızca
 // çağıranın kendi konumuna aittir.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { latLngToCell } from "npm:h3-js@4";
+import { cellToBoundary, latLngToCell } from "npm:h3-js@4";
 
 // H3_RESOLUTION, istemcideki GameConfig.h3Resolution ile aynı olmalı.
 // Diğer tüm eşikler game_config tablosunda (migration 20261001040000).
 const H3_RESOLUTION = 9;
 const CFG_KEYS = [
   "ping_max_accuracy_m",
+  "ping_soft_max_accuracy_m",
   "ping_min_accuracy_m",
   "ping_max_speed_mps",
   "ping_max_age_s",
@@ -43,6 +44,27 @@ function haversineM(lat1: number, lng1: number, lat2: number, lng2: number) {
   const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Noktanın kendi altıgeninin kenarına en kısa mesafesi (m). Yerel düzlem
+// izdüşümü; altıgen ölçeğinde (~200 m) hata ihmal edilebilir.
+function distToCellEdgeM(lat: number, lng: number, cell: string) {
+  const R = 6371000;
+  const rad = Math.PI / 180;
+  const kx = Math.cos(lat * rad) * R * rad;
+  const pts = cellToBoundary(cell).map(([la, ln]) => [
+    (ln - lng) * kx,
+    (la - lat) * R * rad,
+  ]);
+  let best = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const [ax, ay] = pts[i];
+    const [bx, by] = pts[(i + 1) % pts.length];
+    const dx = bx - ax, dy = by - ay;
+    const t = Math.max(0, Math.min(1, -(ax * dx + ay * dy) / (dx * dx + dy * dy)));
+    best = Math.min(best, Math.hypot(ax + t * dx, ay + t * dy));
+  }
+  return best;
 }
 
 const isNum = (v: unknown): v is number =>
@@ -116,7 +138,16 @@ Deno.serve(async (req) => {
   if (accuracy < cfg.ping_min_accuracy_m) {
     return violation("implausible_accuracy", null);
   }
-  if (accuracy > cfg.ping_max_accuracy_m) return reject("poor_accuracy");
+  // Orta doğruluk (ör. 50–100 m) altıgen kesinse kabul: doğruluk dairesi
+  // tamamen tek altıgenin içindeyse oyuncunun hangi altıgende olduğu belli.
+  if (
+    accuracy > cfg.ping_max_accuracy_m &&
+    (accuracy > cfg.ping_soft_max_accuracy_m ||
+      distToCellEdgeM(lat, lng, latLngToCell(lat, lng, H3_RESOLUTION)) <
+        accuracy)
+  ) {
+    return reject("poor_accuracy");
+  }
   if (isNum(client_ts)) {
     const ageS = (Date.now() - client_ts) / 1000;
     if (ageS > cfg.ping_max_age_s) return reject("stale");

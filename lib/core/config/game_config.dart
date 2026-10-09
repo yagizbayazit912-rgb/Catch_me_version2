@@ -40,6 +40,16 @@ abstract final class GameConfig {
   static const walkDistanceFilterM = 0;
   static const walkMaxSpeedMps = 25 / 3.6;
   static const walkSpeedStreak = 2;
+
+  /// GPS iyileştirme: konum bu sıklıkla (sn) okunur, ping penceresindeki en
+  /// iyi (en düşük doğruluk yarıçaplı) okuma gönderilir. Bu yarıçapın (m)
+  /// üstündeki okumalar hiç gönderilmez; sunucudaki `ping_soft_max_accuracy_m`
+  /// ile aynı tutulmalı (karar yine sunucuda).
+  static const walkFixIntervalSec = 3;
+  static const walkMaxSendAccuracyM = 100.0;
+
+  /// Bundan eski okuma gönderilmez (sunucu `ping_max_age_s` daha geniş).
+  static const walkMaxFixAgeSec = 30;
   static const walkNotificationTitle = 'Catch Me aktif';
   static const walkNotificationText = 'Yürüyüşün takip ediliyor';
 

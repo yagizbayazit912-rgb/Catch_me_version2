@@ -71,7 +71,7 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Bölge el değiştirme animasyonu:** Sahip değişince (kaybetme/devralma) renk sessizce güncelleniyor; bölüm 14.1'de tarifi yok. Cila turunda tasarlanacak.
 - **Yürüyüşü otomatik başlatma (ayar):** Uygulama ön plana gelince yürüyüş modu kendiliğinden başlayabilir, ama **varsayılan kapalı bir ayar**; ilk açılışta açık rıza ekranında (PROJE_PLANI bölüm 8) oyuncuya sorulur. Düğme kalır (elle başlat/durdur). Android foreground service'i arka plandayken başlatamaz, bu yüzden "otomatik" = uygulama açılınca. Rıza ekranı adımıyla birlikte yapılacak; o zamana kadar sadece düğme (1.6).
 - **Bölgelerime git (cila):** Haritada kendi bölgelerine uçan buton (önceki/sonraki ile gezinme). Uzaktayken bölgeyi elle aramak zor. Ek: kendi bölgelerim (en fazla `max_owned_hexes`) uzak zoom'da da çizilebilir; şu an >600 görünür hücrede (eğik kamerada yaklaşık zoom 13 altı) hiç sahiplik çizilmiyor.
-- **Uzaktan bölge görünmeme raporu (Adım 1.5 testi sırasında):** Kullanıcı başka yerdeyken yakınlaştırdığı halde bölgesini görmedi. Kod incelemesinde bariz hata yok (görünür alan sorgusu konumdan bağımsız); olası sebepler: 600 hücre sınırı (eğik kamera görünür alanı büyütüyor), sahte konum testi sırasında kameranın yanlış yerde olması. Cihazda yeniden denenip doğrulanacak.
+- **Uzaktan bölge görünmeme raporu (Adım 1.5 testi sırasında):** Kullanıcı başka yerdeyken yakınlaştırdığı halde bölgesini görmedi. Kod incelemesinde bariz hata yok (görünür alan sorgusu konumdan bağımsız); olası sebepler: 600 hücre sınırı (eğik kamera görünür alanı büyütüyor), sahte konum testi sırasında kameranın yanlış yerde olması. Cihazda yeniden denenip doğrulanacak. **✅ 2026-10-09 cihazda doğrulandı: yakınlaştırınca görünüyor.**
 
 ## Adım 2.2 (çadır)
 - **Uzaktan inşa serbest:** Oyuncu kendi hücresine o hücrede durmadan da çadır kurabilir (haritada hücreye dokun → kart). Plan aksini söylemiyor; konum şartı gerekirse `build_structure`'a eklenir.
@@ -87,3 +87,8 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Tavan aşınca fazlası yanar**; sayaç toplama anına çekilir. Kesirli gelir korunur.
 - **Kasa periyodik okunur** (`incomePollSec` = 60 sn), istemci kendisi saymaz; oran/tavan sadece sunucu config'inde.
 - **Sahiplenme süresi 5 dk** (`claim_seconds` = 300, önce 600). Test ve başlangıç hızı için; 5 bölge limiti ve devralma olmadığı için dengeyi bozmuyor. Devralma (30 dk) gelince dengeleme turunda birlikte ayarlanacak. Kayıt: `20261009030000_claim_5min.sql`.
+
+## GPS doğruluğu iyileştirme (2026-10-09, yürüyüş testi sonrası)
+- **İstemci:** Konum 3 sn'de bir okunur (`walkFixIntervalSec`, `LocationAccuracy.best`); 15 sn ping penceresindeki en iyi okuma gönderilir (yeni okuma ≤%20 kötüyse yeniyi tercih eder, yürürken eski altıgende kalmasın). `walkMaxSendAccuracyM` (100 m) üstü veya 30 sn'den eski okuma **gönderilmez**; durum satırı "GPS sinyali zayıf, bekleniyor" der, iyi okuma gelince hemen gönderir.
+- **Sunucu:** 50 m (`ping_max_accuracy_m`) – 100 m (`ping_soft_max_accuracy_m`) arası doğruluk, doğruluk dairesi tamamen tek altıgenin içindeyse kabul (hangi altıgen olduğu kesin). Üstü ret. Kayıt: `20261009040000_gps_soft_accuracy.sql`.
+- **Süre kaybı:** Ret edilen ping `ping_state`'i güncellemediği için sonraki kabul edilen ping aradaki süreyi `presence_max_credit_s` (60 sn) tavanına kadar sayar; kısa zayıf sinyal anları süre kaybettirmez.

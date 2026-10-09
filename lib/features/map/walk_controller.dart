@@ -27,6 +27,7 @@ class WalkController extends ChangeNotifier {
   bool _sending = false;
   int _fastStreak = 0;
   int _slowStreak = 0;
+  Position? _best;
 
   WalkState get state => _state;
   bool get running =>
@@ -59,12 +60,13 @@ class WalkController extends ChangeNotifier {
 
     _fastStreak = 0;
     _slowStreak = 0;
-    _sub = Geolocator.getPositionStream(
+    _best = null;
+    _sub =Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
-        accuracy: LocationAccuracy.high,
+        accuracy: LocationAccuracy.best,
         distanceFilter: GameConfig.walkDistanceFilterM,
         intervalDuration: const Duration(
-          seconds: GameConfig.walkPingIntervalSec,
+          seconds: GameConfig.walkFixIntervalSec,
         ),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
           notificationTitle: GameConfig.walkNotificationTitle,
@@ -105,15 +107,37 @@ class WalkController extends ChangeNotifier {
     }
     if (_state != WalkState.active) return;
 
+    // Penceredeki en iyi okumayı tut. Yeni okuma biraz kötü olsa da tercih
+    // edilir (yürürken eski konum yanlış altıgende kalabilir).
+    if (p.accuracy <= GameConfig.walkMaxSendAccuracyM &&
+        (_best == null || p.accuracy <= _best!.accuracy * 1.2)) {
+      _best = p;
+    }
+
     final now = DateTime.now();
     if (_sending ||
         now.difference(_lastSent).inSeconds < GameConfig.walkPingIntervalSec) {
       return;
     }
+    final best = _best;
+    if (best == null ||
+        now.difference(best.timestamp).inSeconds >
+            GameConfig.walkMaxFixAgeSec) {
+      // Zayıf sinyalde gönderme (ret yerine bekle); iyi okuma gelince
+      // pencere beklenmeden hemen gönderilir.
+      _best = null;
+      final msg = 'GPS sinyali zayıf (±${p.accuracy.round()} m), bekleniyor';
+      if (_status != msg) {
+        _status = msg;
+        notifyListeners();
+      }
+      return;
+    }
+    _best = null;
     _sending = true;
     _lastSent = now;
     try {
-      final res = await _ping.send(p);
+      final res = await _ping.send(best);
       if (!res.ok) {
         _status = 'Reddedildi: ${res.reasonText}';
         notifyListeners();
