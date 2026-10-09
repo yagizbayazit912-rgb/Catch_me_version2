@@ -113,7 +113,7 @@ abstract final class GameConfig {
   /// kamera zoom'u (yüksek yapı sığsın), kurulumun bittiği oran (sonrası
   /// final kutlaması). Gökdelende ~120 ms/kat.
   static const buildAnimMsByLevel = [0, 1200, 2300, 2900, 4200];
-  static const buildFocusZoomByLevel = [0.0, 16.5, 16.4, 16.1, 15.4];
+  static const buildFocusZoomByLevel = [0.0, 16.5, 16.4, 16.1, 15.1];
   static const buildAssembleEndByLevel = [0.0, 1.0, 0.74, 0.72, 0.74];
 
   /// Yükseltmede eski yapının küçülerek kaybolma süresi (ms).
@@ -125,13 +125,15 @@ abstract final class GameConfig {
   static const finaleConfetti = [0, 0, 0, 26, 44];
   static const finaleFireworks = [0, 0, 0, 0, 3];
 
-  /// Gökdelen kat sayıları (alttan üste üç kademe) ve kat yüksekliği
+  /// Gökdelen kat sayıları (alttan üste dört kademe) ve kat yüksekliği
   /// (hücre yarıçapına oran). Her [skyFloorTickEvery] katta hafif titreşim.
-  static const skyTierFloors = [8, 6, 4];
-  static const skyFloorHeight = 0.05;
+  static const skyTierFloors = [9, 7, 5, 3];
+  static const skyFloorHeight = 0.045;
   static const skyFloorTickEvery = 3;
 
-  /// Final sesi/titreşimi (seviye ≥ 2): sikke sesi, otel+ claim tınısı.
+  /// Final titreşimi (seviye ≥ 2). Sesler `tools/make_upgrade_sounds.py`
+  /// ile bu zamanlamalara göre üretilir; süre/kat sayısı değişirse yeniden
+  /// üret.
   static const finaleVibratePattern = [
     <int>[],
     <int>[],

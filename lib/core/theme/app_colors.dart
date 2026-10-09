@@ -66,13 +66,16 @@ abstract final class AppColors {
   static const pool = Color(0xFF4FD8EA);
   static const palmTrunk = Color(0xFFB98257);
 
-  /// Gökdelen: yukarı doğru açılan cam tonları, nane köşe şeritleri, ışıklı
-  /// taç, kırmızımsı ikaz ışığı.
+  /// Gökdelen: aşağıda derin, yukarı doğru açılan cam tonları; beyaz kat
+  /// bantları, pahlı köşelerde nane ışık şeritleri, kademe aralarında
+  /// lavanta parlayan "gökyüzü lobisi" katları, kırmızımsı ikaz ışığı.
+  static const skyGlassDeep = Color(0xFF3A95E8);
   static const skyGlass = Color(0xFF4EAEF5);
   static const skyGlassMid = Color(0xFF6DC0FA);
-  static const skyGlassTop = Color(0xFF92D3FF);
+  static const skyGlassTop = Color(0xFF96D6FF);
   static const skyBand = trimWhite;
   static const skyFin = Color(0xFF3FD3B5);
+  static const skyGlow = Color(0xFFC9B6FF);
   static const skyBeacon = Color(0xFFFF5C7C);
 
   /// Adım 2.3: uçan sikke (tereyağı yüz, sıcak bal kenar).

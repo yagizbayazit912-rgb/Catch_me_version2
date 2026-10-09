@@ -9,11 +9,13 @@ import '../../core/config/game_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 
-/// İnşa anının sesi ve titreşimi; claim'den ayrı: toz "puf" + tahta "tok"
-/// + marimba tınısında yükselen iki nota, titreşimde çift vuruş.
+/// İnşa anının sesi ve titreşimi; claim'den ayrı. Çadır: toz "puf" + tahta
+/// "tok" + marimba. Yükseltme (seviye ≥ 2): animasyonla senkron, baştan
+/// sona süren iz (`upgrade_<seviye>.wav`; puf → yükselen kurulum notaları →
+/// final), atlanırsa [stopUpgradeScore] ile kesilir. Titreşimde çift vuruş.
 /// Medya sesi ve titreşim motoru (Altın Kural: sistem dokunma ayarına bağlı
 /// API'ler kullanılmaz); her seferinde yeni oynatıcı.
-Future<void> playBuildFeedback() async {
+Future<void> playBuildFeedback([int level = 1]) async {
   if (GameConfig.hapticsEnabled) {
     try {
       if (await Vibration.hasVibrator()) {
@@ -28,31 +30,53 @@ Future<void> playBuildFeedback() async {
       HapticFeedback.heavyImpact();
     }
   }
-  if (GameConfig.soundEnabled) {
-    try {
-      final player = AudioPlayer();
-      player.onPlayerComplete.first.then((_) => player.dispose());
-      await player.play(AssetSource(GameConfig.buildSoundAsset));
-    } catch (_) {
-      // Ses dosyası yok / çalınamadı: sessiz devam.
-    }
+  if (!GameConfig.soundEnabled) return;
+  if (level <= 1) {
+    _play(GameConfig.buildSoundAsset);
+    return;
+  }
+  await stopUpgradeScore();
+  try {
+    final player = AudioPlayer();
+    _score = player;
+    player.onPlayerComplete.first.then((_) {
+      if (_score == player) _score = null;
+      player.dispose();
+    });
+    await player.play(AssetSource('audio/upgrade_$level.wav'));
+  } catch (_) {
+    _score = null;
   }
 }
 
-Future<void> _play(String asset, {double rate = 1}) async {
+AudioPlayer? _score;
+
+/// Çalan yükseltme izini keser (animasyon atlandı). Kesildiyse true.
+Future<bool> stopUpgradeScore() async {
+  final p = _score;
+  _score = null;
+  if (p == null) return false;
+  try {
+    await p.stop();
+    await p.dispose();
+  } catch (_) {}
+  return true;
+}
+
+Future<void> _play(String asset) async {
   try {
     final player = AudioPlayer();
     player.onPlayerComplete.first.then((_) => player.dispose());
-    await player.setPlaybackRate(rate);
     await player.play(AssetSource(asset));
   } catch (_) {
     // Ses dosyası yok / çalınamadı: sessiz devam.
   }
 }
 
-/// Yükseltme finali (seviye ≥ 2): sikke sesi, otel ve gökdelende ek olarak
-/// claim tınısı (gökdelende biraz tiz); seviyeyle güçlenen titreşim ritmi.
-Future<void> playFinaleFeedback(int level) async {
+/// Yükseltme finali (seviye ≥ 2): seviyeyle güçlenen titreşim ritmi. Ses
+/// normalde kurulum izinin içinde; animasyon atlandıysa ([withSound]) sadece
+/// final bölümü (`finale_<seviye>.wav`) çalınır.
+Future<void> playFinaleFeedback(int level, {bool withSound = false}) async {
   if (GameConfig.hapticsEnabled) {
     try {
       if (await Vibration.hasVibrator()) {
@@ -67,12 +91,7 @@ Future<void> playFinaleFeedback(int level) async {
       HapticFeedback.heavyImpact();
     }
   }
-  if (!GameConfig.soundEnabled) return;
-  _play(GameConfig.collectSoundAsset);
-  if (level >= 3) {
-    await Future<void>.delayed(const Duration(milliseconds: 140));
-    _play(GameConfig.claimSoundAsset, rate: level >= 4 ? 1.12 : 1);
-  }
+  if (GameConfig.soundEnabled && withSound) _play('audio/finale_$level.wav');
 }
 
 /// Gökdelende birkaç katta bir hafif "tık" titreşimi.

@@ -78,6 +78,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   int _buildCost = 0;
   bool _buildSwapped = false;
   bool _finalePlayed = false;
+  bool _scoreCut = false;
   int _floorTicks = 0;
   late final AnimationController _buildAnim = AnimationController(
     vsync: this,
@@ -488,7 +489,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // birkaç katta bir hafif "tık" (katlar 0.14–0.76 arasında dizilir).
     if (_buildTo >= 2 && !_finalePlayed && t >= end) {
       _finalePlayed = true;
-      playFinaleFeedback(_buildTo);
+      playFinaleFeedback(_buildTo, withSound: _scoreCut);
     }
     if (_buildTo == GameConfig.maxStructureLevel) {
       final total = GameConfig.skyTierFloors.fold<int>(0, (x, y) => x + y);
@@ -621,7 +622,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final reduce = MediaQuery.of(context).disableAnimations;
     final c = _hex.center(cell);
     final target = LatLng(c[1], c[0]);
-    playBuildFeedback();
+    playBuildFeedback(to);
 
     if (reduce) {
       await _renderOwned();
@@ -632,6 +633,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     _buildCost = cost;
     _buildSwapped = false;
     _finalePlayed = false;
+    _scoreCut = false;
     _floorTicks = 0;
     try {
       await map.animateCamera(
@@ -678,6 +680,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         await map.setGeoJsonSource(_buildSource, HexService.collection([]));
       } catch (_) {}
     }
+  }
+
+  /// Animasyonu atlar. Final henüz gelmediyse kurulum izi kesilir, final
+  /// sesi tek başına çalar (ses görüntüden geri kalmasın).
+  void _skipBuild() {
+    if (_buildTo >= 2 && !_finalePlayed) {
+      _scoreCut = true;
+      stopUpgradeScore();
+    }
+    _buildAnim.animateTo(1, duration: const Duration(milliseconds: 80));
   }
 
   /// Hücredeki yapının ekran konumu (mantıksal piksel): blok tepesi ve çadır
@@ -1272,10 +1284,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               top: _buildAnchor!.$2,
               cost: _buildCost,
               fx: _fx,
-              onSkip: () => _buildAnim.animateTo(
-                1,
-                duration: const Duration(milliseconds: 80),
-              ),
+              onSkip: _skipBuild,
             ),
           if (_balance != null)
             SafeArea(

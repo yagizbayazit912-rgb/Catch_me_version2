@@ -541,93 +541,170 @@ class BuildingModel {
     b.flag(-0.15, 0.11, top + 0.02, 0.2, flag, 0.86);
   }
 
-  /// Kademeli cam gökdelen: ağaçlı meydan + fıskiye, cam podyum, yukarı
-  /// doğru açılan cam tonlarında katlar (tek tek dizilir), nane köşe
-  /// şeritleri, ışıklı taç, anten + ikaz ışığı, tepede bayrak.
+  /// Epik gökdelen: ağaçlı meydan + fıskiye, iki katlı cam podyum, pahlı
+  /// (sekizgen) katlarla dört kademe; cam tonu aşağıda derin, yukarı doğru
+  /// açılır. Her kat: cam + beyaz bant + pahlı köşelerde nane ışık şeritleri
+  /// (kat kat; köşe sütunu yok → bant/kademe birleşiminde çakışma yok).
+  /// Kademe aralarında lavanta parlayan "gökyüzü lobisi" katı. Tepede
+  /// daralan cam/beyaz taç, iğne kule, ikaz ışığı ve bayrak.
   void _skyscraper(_Builder b, Color flag) {
-    b.box(
+    // Meydan: pahlı taş zemin, yan çim yatakları, köşe ağaçları, fıskiye.
+    b.oct(
       0,
       0,
-      0.36,
-      0.32,
+      0.37,
+      0.33,
+      0.09,
       AppColors.paving,
       0,
       0.012,
       span: 0.06,
       shadow: false,
     );
-    for (final (u, w, d) in const [
-      (0.29, -0.26, 0.05),
-      (0.29, 0.26, 0.06),
-      (-0.29, -0.26, 0.07),
-      (-0.29, 0.26, 0.08),
-    ]) {
-      b.bush(u, w, 0.045, d);
+    for (final s in const [-1.0, 1.0]) {
+      b.box(
+        -0.02,
+        s * 0.285,
+        0.2,
+        0.03,
+        AppColors.lawn,
+        0.012,
+        0.016,
+        delay: 0.03,
+        span: 0.06,
+        shadow: false,
+      );
     }
-    b.box(
+    for (final (u, w, d) in const [
+      (0.29, -0.25, 0.05),
+      (0.29, 0.25, 0.06),
+      (-0.29, -0.25, 0.07),
+      (-0.29, 0.25, 0.08),
+    ]) {
+      b.bush(u, w, 0.04, d);
+    }
+    b.oct(
       0.30,
       0,
-      0.045,
-      0.06,
+      0.05,
+      0.05,
+      0.015,
       AppColors.trimWhite,
       0.012,
-      0.022,
+      0.024,
       delay: 0.06,
-      span: 0.06,
+      span: 0.05,
+      shadow: false,
+    );
+    b.oct(
+      0.30,
+      0,
+      0.04,
+      0.04,
+      0.012,
+      AppColors.pool,
+      0.012,
+      0.028,
+      delay: 0.07,
+      span: 0.05,
       shadow: false,
     );
     b.box(
       0.30,
       0,
-      0.035,
-      0.05,
+      0.006,
+      0.006,
       AppColors.pool,
-      0.012,
-      0.026,
-      delay: 0.08,
-      span: 0.06,
-      shadow: false,
+      0.028,
+      0.065,
+      delay: 0.1,
+      span: 0.04,
+    );
+    b.oct(
+      0.30,
+      0,
+      0.014,
+      0.014,
+      0.004,
+      AppColors.trimWhite,
+      0.065,
+      0.075,
+      delay: 0.12,
+      span: 0.03,
+      grow: false,
     );
 
-    // Podyum: cam + beyaz çatı + nane giriş saçağı.
-    b.box(
-      0,
-      0,
-      0.26,
-      0.23,
-      AppColors.glass,
-      0.012,
-      0.075,
-      delay: 0.04,
-      span: 0.1,
-    );
-    b.box(
+    // İki katlı podyum: cam + beyaz saçaklar, nane giriş saçağı.
+    b.oct(
       0,
       0,
       0.27,
       0.24,
+      0.06,
+      AppColors.glass,
+      0.012,
+      0.07,
+      delay: 0.03,
+      span: 0.08,
+    );
+    b.oct(
+      0,
+      0,
+      0.28,
+      0.25,
+      0.065,
       AppColors.trimWhite,
-      0.075,
-      0.09,
-      delay: 0.1,
+      0.07,
+      0.085,
+      delay: 0.08,
+      span: 0.04,
+    );
+    b.oct(
+      0,
+      0,
+      0.24,
+      0.21,
+      0.06,
+      AppColors.skyGlassDeep,
+      0.085,
+      0.13,
+      delay: 0.09,
       span: 0.05,
     );
-    b.box(
-      0.275,
+    b.oct(
       0,
-      0.025,
-      0.07,
-      AppColors.skyFin,
-      0.045,
-      0.055,
+      0,
+      0.245,
+      0.215,
+      0.062,
+      AppColors.trimWhite,
+      0.13,
+      0.14,
       delay: 0.12,
-      span: 0.05,
+      span: 0.03,
+    );
+    b.box(
+      0.295,
+      0,
+      0.03,
+      0.08,
+      AppColors.skyFin,
+      0.05,
+      0.06,
+      delay: 0.1,
+      span: 0.04,
       grow: false,
     );
 
-    // Katlar: kademe kademe daralır, cam tonu yukarı doğru açılır.
-    const tiers = [(0.20, 0.17), (0.155, 0.13), (0.11, 0.09)];
+    // Kule: dört kademe, kat kat.
+    const tiers = [
+      (0.20, 0.17, 0.05),
+      (0.165, 0.14, 0.04),
+      (0.13, 0.11, 0.032),
+      (0.095, 0.08, 0.024),
+    ];
     const glass = [
+      AppColors.skyGlassDeep,
       AppColors.skyGlass,
       AppColors.skyGlassMid,
       AppColors.skyGlassTop,
@@ -635,106 +712,100 @@ class BuildingModel {
     const fh = GameConfig.skyFloorHeight;
     final total = GameConfig.skyTierFloors.fold<int>(0, (a, b) => a + b);
     double floorDelay(int i) => 0.14 + 0.62 * i / total;
-    var z = 0.09;
+    var z = 0.14;
     var i = 0;
     for (var t = 0; t < tiers.length; t++) {
-      final (hu, hw) = tiers[t];
-      final z0 = z, i0 = i;
-      for (var f = 0; f < GameConfig.skyTierFloors[t]; f++, i++) {
+      final (hu, hw, c) = tiers[t];
+      final z0 = z;
+      final n = GameConfig.skyTierFloors[t];
+      for (var f = 0; f < n; f++, i++) {
         final d = floorDelay(i);
-        b.box(
+        final lobby = f == n - 1 && t < tiers.length - 1;
+        final zg = z + fh * 0.78;
+        b.oct(
           0,
           0,
           hu,
           hw,
-          glass[t],
+          c,
+          lobby ? AppColors.skyGlow : glass[t],
           z,
-          z + fh * 0.78,
+          zg,
           delay: d,
           span: 0.06,
           shadow: false,
         );
-        b.box(
+        b.oct(
           0,
           0,
           hu + 0.006,
           hw + 0.006,
+          c + 0.003,
           AppColors.skyBand,
-          z + fh * 0.78,
+          zg,
           z + fh,
           delay: d + 0.03,
           span: 0.03,
           shadow: false,
         );
+        b.chamferStrips(
+          hu,
+          hw,
+          c,
+          AppColors.skyFin,
+          z,
+          zg - 0.001,
+          delay: d + 0.02,
+          span: 0.05,
+        );
         z += fh;
       }
-      // Kademe gölgesi tek parça; köşe şeritleri katlarla birlikte uzar.
-      b.shadowBox(0, 0, hu, hw, z0, z);
-      for (final su in const [-1.0, 1.0]) {
-        for (final sw in const [-1.0, 1.0]) {
-          b.box(
-            su * hu,
-            sw * hw,
-            0.012,
-            0.012,
-            AppColors.skyFin,
-            z0,
-            z,
-            delay: floorDelay(i0),
-            span: floorDelay(i) - floorDelay(i0),
-            shadow: false,
-          );
-        }
-      }
+      b.shadowOct(0, 0, hu, hw, c, z0, z);
     }
 
-    // Işıklı taç, makine katı, anten + ikaz ışığı, bayrak.
+    // Taç: yukarı daralan cam/beyaz halkalar.
+    final (lu, lw, lc) = tiers.last;
+    for (var k = 0; k < 6; k++) {
+      final s = 1 - k * 0.14;
+      b.oct(
+        0,
+        0,
+        lu * s,
+        lw * s,
+        lc * s,
+        k.isEven ? AppColors.skyGlassTop : AppColors.trimWhite,
+        z,
+        z + 0.03,
+        delay: 0.8 + k * 0.012,
+        span: 0.05,
+      );
+      z += 0.03;
+    }
+    // İğne kule + ikaz ışığı + bayrak.
     b.box(
       0,
       0,
-      0.115,
-      0.095,
-      AppColors.windowLit,
-      z,
-      z + 0.03,
-      delay: 0.8,
-      span: 0.06,
-    );
-    b.box(
-      0,
-      0,
-      0.06,
-      0.05,
-      AppColors.trimWhite,
-      z + 0.03,
-      z + 0.06,
-      delay: 0.84,
-      span: 0.05,
-    );
-    b.box(
-      0,
-      0,
-      0.012,
-      0.012,
+      0.01,
+      0.01,
       AppColors.poleMetal,
-      z + 0.06,
-      z + 0.32,
+      z,
+      z + 0.3,
       delay: 0.87,
       span: 0.07,
     );
     b.box(
       0,
       0,
-      0.02,
-      0.02,
+      0.018,
+      0.018,
       AppColors.skyBeacon,
-      z + 0.32,
-      z + 0.345,
+      z + 0.3,
+      z + 0.325,
       delay: 0.94,
       span: 0.04,
       grow: false,
     );
-    b.pennant(0, 0, z + 0.27, flag, 0.9, len: 0.14);
+    b.pennant(0, 0, z + 0.24, flag, 0.9, len: 0.14);
   }
 }
 
@@ -833,6 +904,104 @@ class _Builder {
     drop: drop,
     shadow: shadow,
   );
+
+  /// Pahlı köşeli (sekizgen) kat planı: [c] pah boyu. Saat yönünün tersine.
+  List<List<double>> _oct(
+    double cu,
+    double cw,
+    double hu,
+    double hw,
+    double c,
+  ) => [
+    for (final (u, w) in [
+      (hu, hw - c),
+      (hu - c, hw),
+      (-hu + c, hw),
+      (-hu, hw - c),
+      (-hu, -hw + c),
+      (-hu + c, -hw),
+      (hu - c, -hw),
+      (hu, -hw + c),
+    ])
+      f.world((cu + u) * r, (cw + w) * r),
+  ];
+
+  /// Sekizgen parça; ölçüler yarıçap oranı.
+  void oct(
+    double cu,
+    double cw,
+    double hu,
+    double hw,
+    double c,
+    Color color,
+    double b,
+    double t, {
+    double delay = 0,
+    double span = 1,
+    bool grow = true,
+    double drop = 0,
+    bool shadow = true,
+  }) => part(
+    _oct(cu, cw, hu, hw, c),
+    color,
+    b * r,
+    t * r,
+    delay: delay,
+    span: span,
+    grow: grow,
+    drop: drop,
+    shadow: shadow,
+  );
+
+  /// Sekizgen kütlenin tek parça gölgesi.
+  void shadowOct(
+    double cu,
+    double cw,
+    double hu,
+    double hw,
+    double c,
+    double b,
+    double t,
+  ) => _shadow(_oct(cu, cw, hu, hw, c), b * r, t * r);
+
+  /// Merkezdeki sekizgenin dört pah yüzüne ince ışık şeritleri: yüzün
+  /// ortasında, %60 genişlikte, yüzeyden hafif dışarıda (çakışma olmasın).
+  void chamferStrips(
+    double hu,
+    double hw,
+    double c,
+    Color color,
+    double b,
+    double t, {
+    double delay = 0,
+    double span = 1,
+  }) {
+    const inv = 0.7071;
+    for (final su in const [-1.0, 1.0]) {
+      for (final sw in const [-1.0, 1.0]) {
+        final au = su * hu, aw = sw * (hw - c);
+        final bu = su * (hu - c), bw = sw * hw;
+        final mu = (au + bu) / 2, mw = (aw + bw) / 2;
+        final len = c * 1.4142;
+        final du = (bu - au) / len, dw = (bw - aw) / len;
+        final nu = su * inv, nw = sw * inv;
+        final h = 0.3 * len;
+        List<double> at(double s, double o) => f.world(
+          (mu + du * h * s + nu * o) * r,
+          (mw + dw * h * s + nw * o) * r,
+        );
+        part(
+          [at(-1, 0.003), at(1, 0.003), at(1, 0.009), at(-1, 0.009)],
+          color,
+          b * r,
+          t * r,
+          delay: delay,
+          span: span,
+          shadow: false,
+        );
+      }
+    }
+  }
 
   /// Sadece gölge (çok katlı kütlenin tek parça gölgesi için).
   void shadowBox(
