@@ -87,6 +87,7 @@ Durum: **taslak, oyun prototipte sevilirse uygulanır** (PROJE_PLANI "Mini oyun 
 - **Tavan aşınca fazlası yanar**; sayaç toplama anına çekilir. Kesirli gelir korunur.
 - **Kasa periyodik okunur** (`incomePollSec` = 60 sn), istemci kendisi saymaz; oran/tavan sadece sunucu config'inde.
 - **Sahiplenme süresi 5 dk** (`claim_seconds` = 300, önce 600). Test ve başlangıç hızı için; 5 bölge limiti ve devralma olmadığı için dengeyi bozmuyor. Devralma (30 dk) gelince dengeleme turunda birlikte ayarlanacak. Kayıt: `20261009030000_claim_5min.sql`.
+- **Sahiplenme süresi 3 dk** (`claim_seconds` = 180, 2026-10-09): 5 dk sahada fazla geldi. Altıgenin (~350–400 m) ortasından yavaş geçiş veya kısa mola yeter, yanından geçmek yetmez. Kayıt: `20261009050000_claim_3min.sql`.
 
 ## GPS doğruluğu iyileştirme (2026-10-09, yürüyüş testi sonrası)
 - **İstemci:** Konum 3 sn'de bir okunur (`walkFixIntervalSec`, `LocationAccuracy.best`); 15 sn ping penceresindeki en iyi okuma gönderilir (yeni okuma ≤%20 kötüyse yeniyi tercih eder, yürürken eski altıgende kalmasın). `walkMaxSendAccuracyM` (100 m) üstü veya 30 sn'den eski okuma **gönderilmez**; durum satırı "GPS sinyali zayıf, bekleniyor" der, iyi okuma gelince hemen gönderir.
